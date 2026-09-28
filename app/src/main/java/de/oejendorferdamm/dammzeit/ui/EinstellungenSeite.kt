@@ -39,6 +39,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.viewinterop.AndroidView
+import android.widget.FrameLayout
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.LaunchedEffect
+import kotlinx.coroutines.delay
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -52,6 +57,7 @@ import de.oejendorferdamm.dammzeit.update.installationsIntentFuer
 import de.oejendorferdamm.dammzeit.update.kannUnbekannteQuellenInstallieren
 import de.oejendorferdamm.dammzeit.update.oeffneUnbekannteQuellenEinstellungen
 import de.oejendorferdamm.dammzeit.update.pruefeUpdateApk
+import de.oejendorferdamm.dammzeit.widget.WidgetAktualisierer
 import de.oejendorferdamm.dammzeit.widget.WidgetGross
 import de.oejendorferdamm.dammzeit.widget.WidgetKlein
 import kotlinx.coroutines.launch
@@ -125,7 +131,9 @@ fun EinstellungenSeite(
                         "über den Startbildschirm hinzufügen (lange drücken → Widgets → DammZeit).",
                     color = Text2, fontSize = 14.sp
                 )
-                Spacer(Modifier.height(10.dp))
+                Spacer(Modifier.height(12.dp))
+                WidgetVorschau()
+                Spacer(Modifier.height(12.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     GrosserKnopf("Widget 2 × 2", Flaeche, Text1, Modifier.weight(1f)) { widgetAnheften(context, gross = false) }
                     GrosserKnopf("Widget 4 × 4", Flaeche, Text1, Modifier.weight(1f)) { widgetAnheften(context, gross = true) }
@@ -148,6 +156,39 @@ fun EinstellungenSeite(
                 }
             }
             Spacer(Modifier.height(24.dp))
+        }
+    }
+}
+
+/**
+ * Zeigt beide Widgets genau so, wie sie auf dem Startbildschirm aussehen – mit demselben Code.
+ * Wird alle paar Sekunden aufgefrischt, damit man den Ablauf sieht.
+ */
+@Composable
+private fun WidgetVorschau() {
+    val context = LocalContext.current
+    val timer by Speicher.timer.collectAsState()
+    var takt by remember { mutableStateOf(0) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(5_000)
+            takt++
+        }
+    }
+    Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+        for (gross in listOf(false, true)) {
+            AndroidView(
+                factory = { FrameLayout(it) },
+                modifier = Modifier.size(if (gross) 190.dp else 120.dp).clip(RoundedCornerShape(20.dp)),
+                update = { rahmen ->
+                    // takt und timer werden gelesen, damit die Vorschau bei Änderungen neu gebaut wird.
+                    rahmen.tag = takt to timer
+                    val ansicht = WidgetAktualisierer.baue(context, Speicher.widgetTimer(), System.currentTimeMillis(), gross)
+                        .apply(context, rahmen)
+                    rahmen.removeAllViews()
+                    rahmen.addView(ansicht)
+                }
+            )
         }
     }
 }

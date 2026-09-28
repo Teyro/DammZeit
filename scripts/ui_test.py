@@ -147,6 +147,13 @@ def main():
     time.sleep(1.5)
     screenshot("08_einstellungen.png")
 
+    # Widget-Vorschau in den Einstellungen (derselbe Code wie auf dem Startbildschirm)
+    tippe_scrollend("Widget 2 × 2")
+    time.sleep(2)
+    screenshot("08b_widget_vorschau.png")
+    adb("shell", "input", "keyevent", "KEYCODE_BACK")
+    time.sleep(2)
+
     # Widgets auf den Startbildschirm legen
     for knopf in ("Widget 2 × 2", "Widget 4 × 4"):
         if tippe_scrollend(knopf):

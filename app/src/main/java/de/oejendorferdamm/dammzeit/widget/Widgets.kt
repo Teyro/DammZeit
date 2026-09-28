@@ -86,7 +86,8 @@ object WidgetAktualisierer {
         takt(context, an = timer != null && timer.laeuft && !timer.abgelaufen(jetzt))
     }
 
-    private fun baue(context: Context, timer: ZeitTimer?, jetzt: Long, gross: Boolean): RemoteViews {
+    /** Baut ein Widget (auch für die Vorschau in den Einstellungen). */
+    fun baue(context: Context, timer: ZeitTimer?, jetzt: Long, gross: Boolean): RemoteViews {
         val views = RemoteViews(context.packageName, if (gross) R.layout.widget_gross else R.layout.widget_klein)
         if (timer == null) {
             views.setTextViewText(R.id.widget_name, "Kein Timer")

@@ -1,0 +1,8 @@
+<resources>
+    <style name="Theme.DammZeit" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/hintergrund</item>
+        <item name="android:statusBarColor">@color/hintergrund</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:navigationBarColor">@color/hintergrund</item>
+    </style>
+</resources>

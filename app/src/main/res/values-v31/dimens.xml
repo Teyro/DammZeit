@@ -1,0 +1,4 @@
+<resources>
+    <!-- Ab Android 12 dieselbe Rundung wie die übrigen Widgets auf dem Startbildschirm. -->
+    <dimen name="widget_ecke">@android:dimen/system_app_widget_background_radius</dimen>
+</resources>

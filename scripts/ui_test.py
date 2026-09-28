@@ -1,0 +1,142 @@
+#!/usr/bin/env python3
+"""Oberflächentest im CI-Emulator (nur für den manuell gestarteten Workflow screenshots.yml):
+startet DammZeit, bedient die wichtigsten Funktionen und sammelt Screenshots."""
+import os
+import subprocess
+import sys
+import time
+import xml.etree.ElementTree as ET
+
+PAKET = "de.oejendorferdamm.dammzeit"
+ORDNER = "screenshots"
+
+
+def adb(*args, check=False):
+    return subprocess.run(["adb", *args], check=check, capture_output=True, text=True)
+
+
+def screenshot(name):
+    daten = subprocess.run(["adb", "exec-out", "screencap", "-p"], capture_output=True).stdout
+    with open(os.path.join(ORDNER, name), "wb") as f:
+        f.write(daten)
+    print("Screenshot:", name)
+
+
+def baum():
+    for _ in range(4):
+        if adb("shell", "uiautomator", "dump", "/sdcard/d.xml").returncode == 0 and \
+                adb("pull", "/sdcard/d.xml", "d.xml").returncode == 0:
+            try:
+                return ET.parse("d.xml")
+            except ET.ParseError:
+                pass
+        time.sleep(1.5)
+    return None
+
+
+def tippe(*namen):
+    """Tippt auf das erste Element, dessen Text oder Beschreibung einem der Namen entspricht."""
+    b = baum()
+    if b is None:
+        print("WARNUNG: Oberfläche nicht lesbar", file=sys.stderr)
+        return False
+    for knoten in b.iter("node"):
+        if (knoten.get("content-desc") in namen) or (knoten.get("text") in namen):
+            z = [int(v) for v in knoten.get("bounds").replace("][", ",").strip("[]").split(",")]
+            adb("shell", "input", "tap", str((z[0] + z[2]) // 2), str((z[1] + z[3]) // 2))
+            return True
+    print("WARNUNG: nicht gefunden:", namen, file=sys.stderr)
+    return False
+
+
+def laeuft():
+    r = adb("shell", "pidof", PAKET)
+    return r.returncode == 0 and r.stdout.strip() != ""
+
+
+def logcat():
+    with open("logcat.txt", "w") as f:
+        subprocess.run(["adb", "logcat", "-d"], stdout=f)
+
+
+def main():
+    os.makedirs(ORDNER, exist_ok=True)
+    adb("shell", "pm", "grant", PAKET, "android.permission.POST_NOTIFICATIONS")
+    adb("shell", "am", "start", "-n", f"{PAKET}/.MainActivity")
+    time.sleep(5)
+    if not laeuft():
+        print("FEHLER: App läuft nach dem Start nicht", file=sys.stderr)
+        logcat()
+        sys.exit(1)
+    screenshot("01_liste.png")
+
+    # Großansicht und Start
+    tippe("Timer 5 Minuten-Timer")
+    time.sleep(1.5)
+    screenshot("02_ansicht.png")
+    tippe("Start")
+    time.sleep(4)
+    screenshot("03_laeuft.png")
+    tippe("Bearbeiten")
+    time.sleep(1.5)
+    screenshot("04_bearbeiten.png")
+    tippe("Abbrechen")
+    time.sleep(1)
+    tippe("Zurück")
+    time.sleep(1)
+
+    # Neuer 10-Sekunden-Timer, bis zum Klingeln laufen lassen
+    tippe("Neuer Timer")
+    time.sleep(1.5)
+    tippe("1 Min")
+    time.sleep(0.5)
+    for _ in range(5):
+        tippe("− 10 Sek")
+        time.sleep(0.3)
+    screenshot("05_neu.png")
+    adb("shell", "input", "swipe", "500", "1800", "500", "300", "300")
+    time.sleep(1)
+    tippe("Speichern")
+    time.sleep(1.5)
+    tippe("Start")
+    time.sleep(14)
+    screenshot("06_zeit_ist_um.png")
+    tippe("Ton stoppen")
+    time.sleep(1)
+    screenshot("07_gestoppt.png")
+
+    # Den 5-Minuten-Timer wieder anzeigen (für die Widgets) und Einstellungen öffnen
+    tippe("Zurück")
+    time.sleep(1)
+    tippe("Timer 5 Minuten-Timer")
+    time.sleep(1)
+    tippe("Zurück")
+    time.sleep(1)
+    tippe("Einstellungen")
+    time.sleep(1.5)
+    screenshot("08_einstellungen.png")
+
+    # Widgets auf den Startbildschirm legen
+    adb("shell", "input", "swipe", "500", "1800", "500", "400", "300")
+    time.sleep(1)
+    for knopf in ("Widget 2 × 2", "Widget 4 × 4"):
+        if tippe(knopf):
+            time.sleep(2)
+            screenshot("09_widget_dialog.png")
+            tippe("Add automatically", "ADD AUTOMATICALLY", "Add", "ADD", "Automatisch hinzufügen", "Hinzufügen")
+            time.sleep(2)
+    adb("shell", "input", "keyevent", "KEYCODE_HOME")
+    time.sleep(4)
+    screenshot("10_startbildschirm.png")
+    time.sleep(12)
+    screenshot("11_startbildschirm_spaeter.png")
+
+    if not laeuft():
+        print("FEHLER: App ist abgestürzt", file=sys.stderr)
+        logcat()
+        sys.exit(1)
+    logcat()
+
+
+if __name__ == "__main__":
+    main()

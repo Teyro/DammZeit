@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">DammZeit</string>
+    <string name="widget_klein_beschreibung">Zifferblatt mit Restzeit (2×2)</string>
+    <string name="widget_gross_beschreibung">Großes Zifferblatt mit Start/Pause (4×4)</string>
+</resources>

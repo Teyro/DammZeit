@@ -81,6 +81,8 @@ def laeuft():
 def main():
     os.makedirs(ORDNER, exist_ok=True)
     adb("shell", "pm", "grant", PAKET, "android.permission.POST_NOTIFICATIONS")
+    # Den einmaligen Hinweis "Viewing full screen" abschalten, sonst verdeckt er die App.
+    adb("shell", "settings", "put", "secure", "immersive_mode_confirmations", "confirmed")
     adb("shell", "am", "start", "-n", f"{PAKET}/.MainActivity")
     time.sleep(5)
     if not laeuft():

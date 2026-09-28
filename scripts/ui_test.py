@@ -156,9 +156,14 @@ def main():
             time.sleep(2)
     adb("shell", "input", "keyevent", "KEYCODE_HOME")
     time.sleep(4)
+    print(adb("shell", "dumpsys", "appwidget").stdout.count("dammzeit"), "Widget-Einträge von DammZeit")
     screenshot("10_startbildschirm.png")
-    time.sleep(12)
-    screenshot("11_startbildschirm_spaeter.png")
+    # Neue Widgets legt der Launcher oft auf die nächste freie Seite.
+    adb("shell", "input", "swipe", "900", "1200", "150", "1200", "300")
+    time.sleep(3)
+    screenshot("11_startbildschirm_seite2.png")
+    time.sleep(15)
+    screenshot("12_startbildschirm_seite2_spaeter.png")
 
     if not laeuft():
         print("FEHLER: App ist abgestürzt", file=sys.stderr)

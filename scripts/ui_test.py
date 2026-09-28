@@ -68,12 +68,15 @@ def tippe_scrollend(*namen):
                     treffer = k
                     break
         if treffer is not None:
-            unten = int(treffer.get("bounds").replace("][", ",").strip("[]").split(",")[3])
-            if unten < h * 0.85:
-                return tippe(*namen)
+            z = [int(v) for v in treffer.get("bounds").replace("][", ",").strip("[]").split(",")]
+            mitte = (z[1] + z[3]) // 2
+            if mitte < h * 0.85:
+                adb("shell", "input", "tap", str((z[0] + z[2]) // 2), str(mitte))
+                return True
         adb("shell", "input", "swipe", "40", str(int(h * 0.75)), "40", str(int(h * 0.35)), "400")
         time.sleep(1)
     print("WARNUNG: auch nach Scrollen nicht gefunden:", namen, file=sys.stderr)
+    screenshot("fehlt_" + namen[0].replace(" ", "_").replace("×", "x") + ".png")
     return False
 
 

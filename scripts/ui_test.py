@@ -49,6 +49,18 @@ def tippe(*namen):
     return False
 
 
+def tippe_scrollend(*namen):
+    """Wie tippe(), scrollt aber nach unten, bis das Element sichtbar ist."""
+    for _ in range(6):
+        b = baum()
+        if b is not None and any((k.get("content-desc") in namen) or (k.get("text") in namen) for k in b.iter("node")):
+            return tippe(*namen)
+        adb("shell", "input", "swipe", "540", "1700", "540", "700", "400")
+        time.sleep(1)
+    print("WARNUNG: auch nach Scrollen nicht gefunden:", namen, file=sys.stderr)
+    return False
+
+
 def laeuft():
     r = adb("shell", "pidof", PAKET)
     return r.returncode == 0 and r.stdout.strip() != ""
@@ -86,17 +98,17 @@ def main():
     time.sleep(1)
 
     # Neuer 10-Sekunden-Timer, bis zum Klingeln laufen lassen
-    tippe("Neuer Timer")
+    tippe_scrollend("Neuer Timer")
     time.sleep(1.5)
-    tippe("1 Min")
+    tippe_scrollend("1 Min")
     time.sleep(0.5)
+    adb("shell", "input", "swipe", "540", "900", "540", "1700", "300")
+    time.sleep(1)
     for _ in range(5):
-        tippe("− 10 Sek")
+        tippe_scrollend("− 10 Sek")
         time.sleep(0.3)
     screenshot("05_neu.png")
-    adb("shell", "input", "swipe", "500", "1800", "500", "300", "300")
-    time.sleep(1)
-    tippe("Speichern")
+    tippe_scrollend("Speichern")
     time.sleep(1.5)
     tippe("Start")
     time.sleep(14)
@@ -117,10 +129,8 @@ def main():
     screenshot("08_einstellungen.png")
 
     # Widgets auf den Startbildschirm legen
-    adb("shell", "input", "swipe", "500", "1800", "500", "400", "300")
-    time.sleep(1)
     for knopf in ("Widget 2 × 2", "Widget 4 × 4"):
-        if tippe(knopf):
+        if tippe_scrollend(knopf):
             time.sleep(2)
             screenshot("09_widget_dialog.png")
             tippe("Add automatically", "ADD AUTOMATICALLY", "Add", "ADD", "Automatisch hinzufügen", "Hinzufügen")

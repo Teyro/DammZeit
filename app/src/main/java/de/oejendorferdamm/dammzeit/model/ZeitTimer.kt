@@ -24,11 +24,8 @@ enum class Ton(val bezeichnung: String) {
 /** Mögliche Einteilungen des Zifferblatts in Minuten; 0 = passend zur Dauer. */
 val SKALEN = listOf(0, 5, 10, 15, 20, 30, 45, 60, 120)
 
-/** Kleinste Skala, auf die die Dauer passt – wie beim Time Timer meist 60 Minuten. */
-fun automatischeSkala(dauerMs: Long): Int {
-    val minuten = dauerMs / 60_000.0
-    return listOf(5, 10, 15, 20, 30, 45, 60, 120).firstOrNull { it >= minuten - 0.0001 } ?: 120
-}
+/** Wie beim Time Timer: ein 60-Minuten-Zifferblatt, für längere Zeiten 120 Minuten. */
+fun automatischeSkala(dauerMs: Long): Int = if (dauerMs <= 60 * 60_000L) 60 else 120
 
 /**
  * Ein Timer. Läuft er, steht in [endeUm] der Zeitpunkt (Wanduhr, ms), an dem er abläuft – die

@@ -66,7 +66,9 @@ fun Bearbeiten(
 
     fun setzeDauer(ms: Long) {
         val dauer = ms.coerceIn(1000L, 12 * 3_600_000L)
-        entwurf = entwurf.copy(dauerMs = dauer, name = if (nameAutomatisch) standardName(dauer) else entwurf.name)
+        // Passt die Dauer nicht mehr aufs gewählte Zifferblatt, wieder das Standard-Zifferblatt nehmen.
+        val skala = if (entwurf.skalaMinuten > 0 && entwurf.skalaMinuten * 60_000L < dauer) 0 else entwurf.skalaMinuten
+        entwurf = entwurf.copy(dauerMs = dauer, skalaMinuten = skala, name = if (nameAutomatisch) standardName(dauer) else entwurf.name)
     }
 
     Column(
@@ -102,14 +104,14 @@ fun Bearbeiten(
             }
 
             Abschnitt("Dauer") {
-                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
                     Zifferblatt(
                         restMs = entwurf.dauerMs, dauerMs = entwurf.dauerMs, skalaMinuten = entwurf.wirksameSkala(),
-                        farbe = entwurf.farbe, modifier = Modifier.size(200.dp), mitZahlen = true,
+                        farbe = entwurf.farbe, modifier = Modifier.size(260.dp), mitZahlen = true,
                         onDauer = { setzeDauer(it) }
                     )
-                    Spacer(Modifier.size(16.dp))
-                    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
+                    Spacer(Modifier.size(8.dp))
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(formatiereDauer(entwurf.dauerMs), color = Text1, fontSize = 44.sp, fontWeight = FontWeight.Bold)
                         Text("Ziehen am Zifferblatt stellt die Zeit ein", color = Text2, fontSize = 13.sp)
                         Spacer(Modifier.height(10.dp))
@@ -136,7 +138,7 @@ fun Bearbeiten(
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     SKALEN.forEach { skala ->
                         Auswahl(
-                            if (skala == 0) "Passend zur Dauer" else "$skala Min",
+                            if (skala == 0) "Standard (60 Min)" else "$skala Min",
                             entwurf.skalaMinuten == skala,
                             {
                                 // Eine zu kleine Skala würde die Dauer abschneiden – dann passend wählen.

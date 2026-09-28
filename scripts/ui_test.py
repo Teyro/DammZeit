@@ -49,13 +49,29 @@ def tippe(*namen):
     return False
 
 
+def hoehe():
+    ausgabe = adb("shell", "wm", "size").stdout
+    zeilen = [z for z in ausgabe.splitlines() if ":" in z]
+    return int(zeilen[-1].split(":")[1].strip().split("x")[1])
+
+
 def tippe_scrollend(*namen):
-    """Wie tippe(), scrollt aber nach unten, bis das Element sichtbar ist."""
-    for _ in range(6):
+    """Wie tippe(), scrollt aber (am linken Rand, nicht übers Zifferblatt) nach unten, bis das
+    Element vollständig oberhalb der Navigationsleiste sichtbar ist."""
+    h = hoehe()
+    for _ in range(8):
         b = baum()
-        if b is not None and any((k.get("content-desc") in namen) or (k.get("text") in namen) for k in b.iter("node")):
-            return tippe(*namen)
-        adb("shell", "input", "swipe", "540", "1700", "540", "700", "400")
+        treffer = None
+        if b is not None:
+            for k in b.iter("node"):
+                if (k.get("content-desc") in namen) or (k.get("text") in namen):
+                    treffer = k
+                    break
+        if treffer is not None:
+            unten = int(treffer.get("bounds").replace("][", ",").strip("[]").split(",")[3])
+            if unten < h * 0.85:
+                return tippe(*namen)
+        adb("shell", "input", "swipe", "40", str(int(h * 0.75)), "40", str(int(h * 0.35)), "400")
         time.sleep(1)
     print("WARNUNG: auch nach Scrollen nicht gefunden:", namen, file=sys.stderr)
     return False
@@ -102,7 +118,7 @@ def main():
     time.sleep(1.5)
     tippe_scrollend("1 Min")
     time.sleep(0.5)
-    adb("shell", "input", "swipe", "540", "900", "540", "1700", "300")
+    adb("shell", "input", "swipe", "40", "900", "40", "1700", "300")
     time.sleep(1)
     for _ in range(5):
         tippe_scrollend("− 10 Sek")

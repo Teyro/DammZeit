@@ -5,9 +5,15 @@ enum class FarbModus(val bezeichnung: String) {
     ROT("Klassisch rot"),
     VERLAUF("Rot, am Ende dunkler"),
     AMPEL("Ampel: grün, gelb, rot"),
-    BLAU("Blau"),
-    GRUEN("Grün"),
-    LILA("Lila")
+    EIGENE("Eigene Farbe")
+}
+
+/** Aussehen von Hintergrund und Zifferblatt. */
+enum class Hintergrund(val bezeichnung: String) {
+    HELL("Hell"),
+    GRAU("Grau"),
+    DUNKEL("Dunkel"),
+    SCHWARZ("Schwarz")
 }
 
 /** Signalton am Ende. Die Töne werden in der App selbst erzeugt – keine fremden Tondateien. */
@@ -18,27 +24,26 @@ enum class Ton(val bezeichnung: String) {
     PIEPEN("Piepen"),
     WECKER("Wecker"),
     SYSTEM("Wecker-Ton des Geräts"),
-    STILL("Kein Ton (nur Hinweis)")
+    STILL("Kein Ton")
 }
 
-/** Mögliche Einteilungen des Zifferblatts in Minuten; 0 = passend zur Dauer. */
-val SKALEN = listOf(0, 5, 10, 15, 20, 30, 45, 60, 120)
+/** Wählbare Zifferblätter in Minuten (eine volle Umdrehung). */
+val SKALEN = listOf(5, 10, 15, 20, 30, 45, 60, 90, 120)
 
-/** Wie beim Time Timer: ein 60-Minuten-Zifferblatt, für längere Zeiten 120 Minuten. */
-fun automatischeSkala(dauerMs: Long): Int = if (dauerMs <= 60 * 60_000L) 60 else 120
+/** Auswahl für eigene Farben der Zeitscheibe. */
+val EIGENE_FARBEN = listOf(
+    0xFFE01E3C, 0xFF7A0014, 0xFFF06A1D, 0xFFF2B705, 0xFF2EA043, 0xFF0B7A5B,
+    0xFF1E6FD9, 0xFF123E8C, 0xFF7B3FC4, 0xFFD6338A, 0xFF5B5F66, 0xFF1E1E1E
+).map { it.toInt() }
 
 /**
- * Ein Timer. Läuft er, steht in [endeUm] der Zeitpunkt (Wanduhr, ms), an dem er abläuft – die
+ * Der Timer. Läuft er, steht in [endeUm] der Zeitpunkt (Wanduhr, ms), an dem er abläuft – die
  * Restzeit wird daraus jedes Mal neu berechnet. Dadurch läuft die Uhr in Echtzeit weiter, auch
  * wenn die App geschlossen ist, und bleibt über Neustarts hinweg genau.
  */
 data class ZeitTimer(
-    val id: Long,
-    val name: String,
-    val dauerMs: Long,
-    val skalaMinuten: Int = 0,
-    val farbe: FarbModus = FarbModus.ROT,
-    val ton: Ton = Ton.GONG,
+    val id: Long = TIMER_ID,
+    val dauerMs: Long = 15 * 60_000L,
     val endeUm: Long = 0L,
     val restBeiPauseMs: Long = -1L
 ) {
@@ -54,7 +59,10 @@ data class ZeitTimer(
     /** Gestartet und die Zeit ist um (bis zum Zurücksetzen bleibt die Scheibe leer). */
     fun abgelaufen(jetzt: Long): Boolean = laeuft && endeUm <= jetzt
 
-    fun wirksameSkala(): Int = if (skalaMinuten > 0) skalaMinuten else automatischeSkala(dauerMs)
+    companion object {
+        /** Es gibt genau einen Timer – die Uhr an der Tafel. */
+        const val TIMER_ID = 1L
+    }
 }
 
 /** "14:00" oder "1:05:00". */
@@ -66,15 +74,15 @@ fun formatiereDauer(ms: Long): String {
     return if (stunden > 0) "%d:%02d:%02d".format(stunden, minuten, sekunden) else "%d:%02d".format(minuten, sekunden)
 }
 
-/** Vorschlag für den Namen: "14 Minuten-Timer", "1 Minute 30 Sekunden". */
-fun standardName(dauerMs: Long): String {
-    val sekunden = dauerMs / 1000
+/** Überschrift wie beim Time Timer: "14 MINUTEN-TIMER". */
+fun titelFuer(dauerMs: Long): String {
+    val sekunden = (dauerMs + 999) / 1000
     val minuten = sekunden / 60
     val rest = sekunden % 60
     return when {
-        rest == 0L && minuten == 1L -> "1 Minute"
-        rest == 0L -> "$minuten Minuten-Timer"
-        minuten == 0L -> "$rest Sekunden"
-        else -> "$minuten Min. $rest Sek."
+        rest == 0L && minuten == 1L -> "1 MINUTEN-TIMER"
+        rest == 0L -> "$minuten MINUTEN-TIMER"
+        minuten == 0L -> "$rest SEKUNDEN-TIMER"
+        else -> "$minuten:%02d MINUTEN-TIMER".format(rest)
     }
 }

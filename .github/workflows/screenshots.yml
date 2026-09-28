@@ -45,7 +45,7 @@ jobs:
           api-level: ${{ inputs.api_level }}
           target: google_apis
           arch: x86_64
-          profile: pixel_5
+          profile: Nexus 9
           disable-animations: true
           script: |
             adb install -r app/build/outputs/apk/debug/app-debug.apk

@@ -13,9 +13,6 @@ import android.os.Build
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
-import android.os.VibrationEffect
-import android.os.Vibrator
-import android.os.VibratorManager
 import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
@@ -73,10 +70,11 @@ class KlingelDienst : Service() {
         }
         val id = intent?.getLongExtra(AlarmEmpfaenger.EXTRA_ID, -1L) ?: -1L
         val timer = Speicher.finde(id)
-        if (timer == null) {
+        // Klingelt nur, wenn die Uhr wirklich abgelaufen ist (nicht nach Zurücksetzen/Neustellen).
+        if (timer == null || !timer.abgelaufen(System.currentTimeMillis() + 2000L)) {
             // Nach startForegroundService muss startForeground in jedem Fall kommen.
             ServiceCompat.startForeground(
-                this, NOTIFICATION_ID, benachrichtigung(this, "Timer", id),
+                this, NOTIFICATION_ID, benachrichtigung(this),
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK else 0
             )
             beenden()
@@ -85,30 +83,19 @@ class KlingelDienst : Service() {
         aktuelleId = id
         val einstellungen = Speicher.einstellungen.value
         ServiceCompat.startForeground(
-            this, NOTIFICATION_ID, benachrichtigung(this, timer.name, id),
+            this, NOTIFICATION_ID, benachrichtigung(this),
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK else 0
         )
         _klingelt.value = id
         val neuerSpieler = spieler ?: TonSpieler(this).also { spieler = it }
-        neuerSpieler.spiele(timer.ton, wiederholen = true)
-        if (einstellungen.vibration) vibriere()
+        neuerSpieler.spiele(einstellungen.ton, wiederholen = true, lautstaerke = einstellungen.lautstaerke)
         handler.removeCallbacks(ende)
-        handler.postDelayed(ende, einstellungen.klingelSekunden * 1000L)
+        // 0 = klingelt, bis jemand auf die Uhr tippt (höchstens 10 Minuten).
+        val sekunden = if (einstellungen.klingelSekunden <= 0) 600 else einstellungen.klingelSekunden
+        handler.postDelayed(ende, sekunden * 1000L)
         return START_NOT_STICKY
     }
 
-    private fun vibriere() {
-        val vibrator: Vibrator? = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            getSystemService(VibratorManager::class.java)?.defaultVibrator
-        } else {
-            @Suppress("DEPRECATION")
-            getSystemService(Vibrator::class.java)
-        }
-        try {
-            vibrator?.vibrate(VibrationEffect.createWaveform(longArrayOf(0, 600, 400, 600, 400, 600), -1))
-        } catch (_: Exception) {
-        }
-    }
 
     private fun beenden() {
         handler.removeCallbacks(ende)
@@ -143,10 +130,9 @@ class KlingelDienst : Service() {
             } catch (e: Exception) {
                 // Darf der Dienst nicht starten (z. B. ungenauer Wecker unter Android 12+),
                 // wenigstens eine Benachrichtigung mit Ton zeigen.
-                val name = Speicher.finde(id)?.name ?: "Timer"
                 kanalAnlegen(context)
                 context.getSystemService(NotificationManager::class.java)
-                    ?.notify(NOTIFICATION_ID, benachrichtigung(context, name, id))
+                    ?.notify(NOTIFICATION_ID, benachrichtigung(context))
             }
         }
 
@@ -171,17 +157,17 @@ class KlingelDienst : Service() {
             }
         }
 
-        fun benachrichtigung(context: Context, name: String, id: Long): Notification {
+        fun benachrichtigung(context: Context): Notification {
             kanalAnlegen(context)
             val stopp = PendingIntent.getService(
                 context, 1, Intent(context, KlingelDienst::class.java).setAction(AKTION_STOPP),
                 PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
             )
-            val oeffnen = TimerSteuerung.oeffnenIntent(context, id)
+            val oeffnen = TimerSteuerung.oeffnenIntent(context)
             return NotificationCompat.Builder(context, KANAL)
                 .setSmallIcon(R.drawable.ic_benachrichtigung)
                 .setContentTitle("Zeit ist um!")
-                .setContentText("„$name“ ist abgelaufen.")
+                .setContentText("Auf die Uhr tippen, um den Ton zu stoppen.")
                 .setCategory(NotificationCompat.CATEGORY_ALARM)
                 .setPriority(NotificationCompat.PRIORITY_MAX)
                 .setContentIntent(oeffnen)

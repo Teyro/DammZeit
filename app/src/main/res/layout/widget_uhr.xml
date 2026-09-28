@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Nur die runde Uhr, ohne Rahmen – Antippen startet oder pausiert sie. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <ImageView
+        android:id="@+id/widget_zifferblatt"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:contentDescription="DammZeit-Uhr, antippen zum Starten oder Anhalten"
+        android:scaleType="fitCenter" />
+</FrameLayout>

@@ -3,8 +3,8 @@ package de.oejendorferdamm.dammzeit.ui
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.padding
@@ -37,11 +37,12 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import de.oejendorferdamm.dammzeit.data.Einstellungen
 import de.oejendorferdamm.dammzeit.model.FarbModus
 import kotlin.math.atan2
 import kotlin.math.roundToLong
 
-val Hintergrund = Color(0xFFECEEF1)
+val HellerGrund = Color(0xFFECEEF1)
 val Karte = Color(0xFFFFFFFF)
 val Text1 = Color(0xFF1F2124)
 val Text2 = Color(0xFF6B7078)
@@ -66,51 +67,58 @@ fun rememberJetzt(aktiv: Boolean): State<Long> {
 }
 
 /**
- * Zifferblatt als Compose-Baustein. Mit [onDauer] lässt sich die Zeit wie beim echten Time Timer
- * durch Ziehen/Tippen auf dem Zifferblatt einstellen.
+ * Das Zifferblatt. Bedienung wie beim echten Time Timer: an der Scheibe ziehen stellt die Zeit
+ * ein ([onZiehen] während des Ziehens, [onLoslassen] am Ende), kurzes Antippen ruft [onTippen].
  */
 @Composable
 fun Zifferblatt(
     restMs: Long,
     dauerMs: Long,
-    skalaMinuten: Int,
-    farbe: FarbModus,
+    einstellungen: Einstellungen,
     modifier: Modifier = Modifier,
-    mitZahlen: Boolean = true,
-    onDauer: ((Long) -> Unit)? = null
+    mitZahlen: Boolean = einstellungen.zahlenAnzeigen,
+    onZiehen: ((Long) -> Unit)? = null,
+    onLoslassen: (() -> Unit)? = null,
+    onTippen: (() -> Unit)? = null
 ) {
-    val aktuell by rememberUpdatedState(onDauer)
-    val bedienung = if (onDauer == null) Modifier else Modifier.pointerInput(skalaMinuten) {
-        fun setze(p: Offset) {
+    val skala = einstellungen.skalaMinuten
+    val ziehen by rememberUpdatedState(onZiehen)
+    val loslassen by rememberUpdatedState(onLoslassen)
+    val tippen by rememberUpdatedState(onTippen)
+    val bedienung = if (onZiehen == null && onTippen == null) Modifier else Modifier.pointerInput(skala) {
+        fun dauerFuer(p: Offset): Long {
             val dx = p.x - size.width / 2f
             val dy = p.y - size.height / 2f
             // Winkel ab 12 Uhr gegen den Uhrzeigersinn (wie die Zahlen auf dem Zifferblatt).
             var grad = Math.toDegrees(atan2(dx.toDouble(), -dy.toDouble()))
             grad = (360.0 - grad) % 360.0
-            val schritt = if (skalaMinuten <= 10) 15_000L else if (skalaMinuten <= 30) 30_000L else 60_000L
-            val roh = grad / 360.0 * skalaMinuten * 60_000.0
-            val gerundet = ((roh / schritt).roundToLong() * schritt).coerceIn(schritt, skalaMinuten * 60_000L)
-            aktuell?.invoke(gerundet)
+            val schritt = if (skala <= 10) 15_000L else if (skala <= 30) 30_000L else 60_000L
+            val roh = grad / 360.0 * skala * 60_000.0
+            return ((roh / schritt).roundToLong() * schritt).coerceIn(schritt, skala * 60_000L)
         }
-        detectDragGestures(onDragStart = { setze(it) }) { change, _ ->
-            change.consume()
-            setze(change.position)
-        }
-    }.pointerInput(skalaMinuten) {
-        detectTapGestures { p ->
-            val dx = p.x - size.width / 2f
-            val dy = p.y - size.height / 2f
-            var grad = Math.toDegrees(atan2(dx.toDouble(), -dy.toDouble()))
-            grad = (360.0 - grad) % 360.0
-            val schritt = if (skalaMinuten <= 10) 15_000L else if (skalaMinuten <= 30) 30_000L else 60_000L
-            val roh = grad / 360.0 * skalaMinuten * 60_000.0
-            aktuell?.invoke(((roh / schritt).roundToLong() * schritt).coerceIn(schritt, skalaMinuten * 60_000L))
+        awaitEachGesture {
+            val unten = awaitFirstDown()
+            var gezogen = false
+            while (true) {
+                val ereignis = awaitPointerEvent()
+                val aenderung = ereignis.changes.firstOrNull { it.id == unten.id } ?: break
+                if (!gezogen && (aenderung.position - unten.position).getDistance() > viewConfiguration.touchSlop) {
+                    gezogen = true
+                }
+                if (gezogen) {
+                    ziehen?.invoke(dauerFuer(aenderung.position))
+                    aenderung.consume()
+                }
+                if (!aenderung.pressed) break
+            }
+            if (gezogen) loslassen?.invoke() else tippen?.invoke()
         }
     }
-    Canvas(modifier.then(bedienung).semantics { contentDescription = "Zifferblatt" }) {
+    Canvas(modifier.then(bedienung).semantics { contentDescription = "Uhr" }) {
         drawIntoCanvas {
             ZifferblattZeichner.zeichne(
-                it.nativeCanvas, size.width, size.height, restMs, dauerMs, skalaMinuten, farbe, mitZahlen
+                it.nativeCanvas, size.width, size.height, restMs, dauerMs, skala,
+                einstellungen.farbe, einstellungen.eigeneFarbe, einstellungen.hintergrund, mitZahlen
             )
         }
     }
@@ -175,7 +183,7 @@ fun FarbPunkt(farbe: Color, modifier: Modifier = Modifier) {
 }
 
 /** Pfeil-/Symbolzeichnungen für Knöpfe, einfach und scharf in jeder Größe. */
-enum class Symbol { START, PAUSE, ZURUECK, PLUS, MINUS, ZURUECK_PFEIL, ZAHNRAD, STIFT, LAUTSPRECHER, STOPP }
+enum class Symbol { START, PAUSE, ZURUECK, PLUS, MINUS, ZURUECK_PFEIL, ZAHNRAD, STIFT, LAUTSPRECHER, STOPP, SCHLIESSEN }
 
 @Composable
 fun SymbolBild(symbol: Symbol, farbe: Color, modifier: Modifier = Modifier) {
@@ -196,6 +204,10 @@ fun SymbolBild(symbol: Symbol, farbe: Color, modifier: Modifier = Modifier) {
             Symbol.PLUS -> {
                 drawLine(farbe, p(0.5f, 0.2f), p(0.5f, 0.8f), linie, androidx.compose.ui.graphics.StrokeCap.Round)
                 drawLine(farbe, p(0.2f, 0.5f), p(0.8f, 0.5f), linie, androidx.compose.ui.graphics.StrokeCap.Round)
+            }
+            Symbol.SCHLIESSEN -> {
+                drawLine(farbe, p(0.25f, 0.25f), p(0.75f, 0.75f), linie, androidx.compose.ui.graphics.StrokeCap.Round)
+                drawLine(farbe, p(0.75f, 0.25f), p(0.25f, 0.75f), linie, androidx.compose.ui.graphics.StrokeCap.Round)
             }
             Symbol.MINUS -> drawLine(farbe, p(0.2f, 0.5f), p(0.8f, 0.5f), linie, androidx.compose.ui.graphics.StrokeCap.Round)
             Symbol.ZURUECK -> {
@@ -243,5 +255,29 @@ fun SymbolBild(symbol: Symbol, farbe: Color, modifier: Modifier = Modifier) {
                 )
             }
         }
+    }
+}
+
+/** Breiter Knopf mit Text. */
+@Composable
+fun GrosserKnopf(text: String, farbe: Color, textFarbe: Color, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    Box(
+        modifier
+            .clip(RoundedCornerShape(50))
+            .background(farbe)
+            .clickable(role = Role.Button, onClick = onClick)
+            .padding(vertical = 16.dp, horizontal = 20.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(text, color = textFarbe, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
+    }
+}
+
+/** Zwei Punkte zeigen, wie die Farbe am Anfang und kurz vor Schluss aussieht. */
+@Composable
+fun FarbVorschau(modus: FarbModus, eigeneFarbe: Int) {
+    androidx.compose.foundation.layout.Row(horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(3.dp)) {
+        FarbPunkt(Color(ZifferblattZeichner.sektorFarbe(modus, eigeneFarbe, 30 * 60_000L, 30 * 60_000L)))
+        FarbPunkt(Color(ZifferblattZeichner.sektorFarbe(modus, eigeneFarbe, 10_000L, 30 * 60_000L)))
     }
 }

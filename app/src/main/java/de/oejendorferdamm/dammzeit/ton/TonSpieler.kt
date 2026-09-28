@@ -27,14 +27,17 @@ class TonSpieler(private val context: Context) {
 
     /** Startet den Ton; [wiederholen] = in Schleife bis [stopp]. */
     @Synchronized
-    fun spiele(ton: Ton, wiederholen: Boolean) {
+    fun spiele(ton: Ton, wiederholen: Boolean, lautstaerke: Float = 1f) {
         stopp()
+        this.lautstaerke = lautstaerke.coerceIn(0.05f, 1f)
         when (ton) {
             Ton.STILL -> Unit
             Ton.SYSTEM -> spieleGeraeteTon(wiederholen)
             else -> spieleErzeugt(ton, wiederholen)
         }
     }
+
+    private var lautstaerke = 1f
 
     @Synchronized
     fun stopp() {
@@ -65,6 +68,7 @@ class TonSpieler(private val context: Context) {
                 setAudioAttributes(attribute)
                 setDataSource(context, uri)
                 isLooping = wiederholen
+                setVolume(lautstaerke, lautstaerke)
                 prepare()
                 start()
             }
@@ -90,6 +94,7 @@ class TonSpieler(private val context: Context) {
             .build()
         track.write(daten, 0, daten.size)
         if (wiederholen) track.setLoopPoints(0, daten.size, -1)
+        track.setVolume(lautstaerke)
         track.play()
         spur = track
     }

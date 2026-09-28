@@ -58,7 +58,7 @@ object ZifferblattZeichner {
         if (seite <= 0f) return
         val cx = breite / 2f
         val cy = hoehe / 2f
-        val radius = seite * (if (mitZahlen) 0.335f else 0.40f)
+        val radius = seite * (if (mitZahlen) 0.31f else 0.40f)
 
         // Scheibe mit leichtem Verlauf: innen heller, zum Rand etwas dunkler (wie im Original).
         scheibe.shader = RadialGradient(
@@ -107,8 +107,8 @@ object ZifferblattZeichner {
         if (mitZahlen) {
             val schritt = beschriftungsSchritt(skalaMinuten)
             val anzahl = skalaMinuten / schritt
-            schrift.textSize = seite * 0.072f
-            val textRadius = radius + seite * 0.125f
+            schrift.textSize = seite * 0.068f
+            val textRadius = radius + seite * 0.118f
             val mitteText = (schrift.descent() + schrift.ascent()) / 2f
             for (k in 0 until anzahl) {
                 val winkel = Math.toRadians(-90.0 - k * 360.0 / anzahl)

@@ -74,7 +74,7 @@ def tippe_scrollend(*namen):
                 adb("shell", "input", "tap", str((z[0] + z[2]) // 2), str(mitte))
                 return True
         adb("shell", "input", "swipe", "40", str(int(h * 0.75)), "40", str(int(h * 0.35)), "400")
-        time.sleep(1)
+        time.sleep(2.5)  # Nachlauf abwarten – ein Tippen während des Scrollens stoppt nur
     print("WARNUNG: auch nach Scrollen nicht gefunden:", namen, file=sys.stderr)
     screenshot("fehlt_" + namen[0].replace(" ", "_").replace("×", "x") + ".png")
     return False
@@ -122,7 +122,7 @@ def main():
     tippe_scrollend("1 Min")
     time.sleep(0.5)
     adb("shell", "input", "swipe", "40", "900", "40", "1700", "300")
-    time.sleep(1)
+    time.sleep(2.5)
     for _ in range(5):
         tippe_scrollend("− 10 Sek")
         time.sleep(0.3)
@@ -152,7 +152,7 @@ def main():
         if tippe_scrollend(knopf):
             time.sleep(2)
             screenshot("09_widget_dialog.png")
-            tippe("Add automatically", "ADD AUTOMATICALLY", "Add", "ADD", "Automatisch hinzufügen", "Hinzufügen")
+            tippe("Add to Home screen", "ADD TO HOME SCREEN", "Add automatically", "ADD AUTOMATICALLY", "Add", "ADD", "Automatisch hinzufügen", "Hinzufügen")
             time.sleep(2)
     adb("shell", "input", "keyevent", "KEYCODE_HOME")
     time.sleep(4)

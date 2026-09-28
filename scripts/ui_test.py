@@ -70,7 +70,7 @@ def tippe_scrollend(*namen):
         if treffer is not None:
             z = [int(v) for v in treffer.get("bounds").replace("][", ",").strip("[]").split(",")]
             mitte = (z[1] + z[3]) // 2
-            if mitte < h * 0.85:
+            if mitte < h * 0.9:
                 adb("shell", "input", "tap", str((z[0] + z[2]) // 2), str(mitte))
                 return True
         adb("shell", "input", "swipe", "40", str(int(h * 0.75)), "40", str(int(h * 0.35)), "400")

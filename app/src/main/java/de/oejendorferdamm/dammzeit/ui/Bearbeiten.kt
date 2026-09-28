@@ -71,11 +71,11 @@ fun Bearbeiten(
         entwurf = entwurf.copy(dauerMs = dauer, skalaMinuten = skala, name = if (nameAutomatisch) standardName(dauer) else entwurf.name)
     }
 
+    Column(Modifier.fillMaxSize().background(Hintergrund).systemBarsPadding()) {
     Column(
         Modifier
-            .fillMaxSize()
-            .background(Hintergrund)
-            .systemBarsPadding()
+            .weight(1f)
+            .fillMaxWidth()
             .verticalScroll(rememberScrollState())
             .padding(20.dp),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -186,18 +186,21 @@ fun Bearbeiten(
                 }
             }
 
-            Spacer(Modifier.height(8.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-                if (!istNeu) {
-                    GrosserKnopf("Löschen", Flaeche, Akzent, Modifier.weight(1f)) { onLoeschen() }
-                }
-                GrosserKnopf("Speichern", Akzent, Color.White, Modifier.weight(1f)) {
-                    val name = entwurf.name.trim().ifEmpty { standardName(entwurf.dauerMs) }
-                    onSpeichern(entwurf.copy(name = name))
-                }
-            }
-            Spacer(Modifier.height(24.dp))
         }
+    }
+    // Feste Leiste unten: Speichern ist immer erreichbar, ohne bis ans Ende zu scrollen.
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        modifier = Modifier.fillMaxWidth().background(Karte).padding(horizontal = 20.dp, vertical = 12.dp)
+    ) {
+        if (!istNeu) {
+            GrosserKnopf("Löschen", Flaeche, Akzent, Modifier.weight(1f)) { onLoeschen() }
+        }
+        GrosserKnopf("Speichern", Akzent, Color.White, Modifier.weight(1f)) {
+            val name = entwurf.name.trim().ifEmpty { standardName(entwurf.dauerMs) }
+            onSpeichern(entwurf.copy(name = name))
+        }
+    }
     }
 }
 

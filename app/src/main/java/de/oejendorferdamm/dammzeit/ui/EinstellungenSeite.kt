@@ -164,6 +164,7 @@ fun EinstellungenSeite(
  * Zeigt beide Widgets genau so, wie sie auf dem Startbildschirm aussehen – mit demselben Code.
  * Wird alle paar Sekunden aufgefrischt, damit man den Ablauf sieht.
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun WidgetVorschau() {
     val context = LocalContext.current
@@ -175,11 +176,11 @@ private fun WidgetVorschau() {
             takt++
         }
     }
-    Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         for (gross in listOf(false, true)) {
             AndroidView(
                 factory = { FrameLayout(it) },
-                modifier = Modifier.size(if (gross) 190.dp else 120.dp).clip(RoundedCornerShape(20.dp)),
+                modifier = Modifier.size(if (gross) 260.dp else 140.dp).clip(RoundedCornerShape(20.dp)),
                 update = { rahmen ->
                     // takt und timer werden gelesen, damit die Vorschau bei Änderungen neu gebaut wird.
                     rahmen.tag = takt to timer

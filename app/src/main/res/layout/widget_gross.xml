@@ -70,7 +70,8 @@
             android:layout_weight="1"
             android:gravity="center"
             android:textColor="#222222"
-            android:textSize="26sp"
+            android:textSize="24sp"
+            android:singleLine="true"
             android:textStyle="bold" />
 
         <ImageView

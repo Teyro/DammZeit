@@ -233,17 +233,7 @@ fun DammZeitApp() {
                         Spacer(Modifier.size(18.dp))
                         // Startknopf in der Mitte, links daneben (nur wenn sinnvoll) Zurücksetzen.
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(Modifier.size(84.dp), contentAlignment = Alignment.Center) {
-                                AnimatedVisibility(
-                                    visible = !frisch,
-                                    enter = fadeIn(tween(250)) + scaleIn(tween(300), initialScale = 0.6f),
-                                    exit = fadeOut(tween(200)) + scaleOut(tween(200), targetScale = 0.6f)
-                                ) {
-                                    RundKnopf("Zurücksetzen", { TimerSteuerung.zuruecksetzen(context) }, groesse = 84.dp) {
-                                        SymbolBild(Symbol.ZURUECK, Text1, Modifier.size(40.dp))
-                                    }
-                                }
-                            }
+                            ZuruecksetzenKnopf(sichtbar = !frisch) { TimerSteuerung.zuruecksetzen(context) }
                             Spacer(Modifier.size(36.dp))
                             StartKnopf(startZustand, if (klingelnd) Akzent else scheibenFarbe, onClick = { TimerSteuerung.antippen(context) })
                             Spacer(Modifier.size(36.dp))
@@ -284,6 +274,22 @@ fun DammZeitApp() {
                         modifier = Modifier.width(760.dp).fillMaxHeight()
                     )
                 }
+            }
+        }
+    }
+}
+
+/** Zurücksetzen erscheint nur, wenn es etwas zurückzusetzen gibt – mit weichem Ein-/Ausblenden. */
+@Composable
+private fun ZuruecksetzenKnopf(sichtbar: Boolean, onClick: () -> Unit) {
+    Box(Modifier.size(84.dp), contentAlignment = Alignment.Center) {
+        AnimatedVisibility(
+            visible = sichtbar,
+            enter = fadeIn(tween(250)) + scaleIn(tween(300), initialScale = 0.6f),
+            exit = fadeOut(tween(200)) + scaleOut(tween(200), targetScale = 0.6f)
+        ) {
+            RundKnopf("Zurücksetzen", onClick, groesse = 84.dp) {
+                SymbolBild(Symbol.ZURUECK, Text1, Modifier.size(40.dp))
             }
         }
     }

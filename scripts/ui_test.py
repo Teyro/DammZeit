@@ -93,10 +93,10 @@ def main():
     stelle_uhr(14 / 60)  # 14 Minuten, startet sofort
     time.sleep(3)
     screenshot("02_14_minuten_laeuft.png")
-    tippe("Uhr")  # Pause
+    tippe("Pause")  # Startknopf: Pause
     time.sleep(1.5)
     screenshot("03_pausiert.png")
-    tippe("Uhr")  # weiter
+    tippe("Weiter")
     time.sleep(1)
 
     tippe("Einstellungen")
@@ -121,6 +121,17 @@ def main():
     tippe("Uhr")  # Ton stoppen
     time.sleep(2)
     screenshot("09_gestoppt.png")
+
+    tippe("Start")
+    time.sleep(2)
+    screenshot("10_start_knopf.png")
+    tippe("Pause")
+    time.sleep(1)
+    tippe("Zurücksetzen")
+    time.sleep(0.25)
+    screenshot("11_zuruecksetzen_gleitet.png")
+    time.sleep(2)
+    screenshot("12_zurueckgesetzt.png")
 
     if not laeuft():
         print("FEHLER: App ist abgestürzt", file=sys.stderr)

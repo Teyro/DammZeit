@@ -1,6 +1,23 @@
 package de.oejendorferdamm.dammzeit.ui
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
@@ -124,6 +141,63 @@ fun Zifferblatt(
     }
 }
 
+/** Knöpfe geben beim Drücken sichtbar nach und federn zurück. */
+@Composable
+fun Modifier.drueckFeder(quelle: MutableInteractionSource): Modifier {
+    val gedrueckt by quelle.collectIsPressedAsState()
+    val faktor by animateFloatAsState(
+        if (gedrueckt) 0.92f else 1f,
+        spring(dampingRatio = 0.45f, stiffness = 600f),
+        label = "drueckFeder"
+    )
+    return graphicsLayer { scaleX = faktor; scaleY = faktor }
+}
+
+/** Was der Startknopf gerade anbietet. */
+enum class StartZustand(val text: String, val symbol: Symbol) {
+    START("Start", Symbol.START),
+    PAUSE("Pause", Symbol.PAUSE),
+    WEITER("Weiter", Symbol.START),
+    STOPP("Stopp", Symbol.STOPP)
+}
+
+/**
+ * Der große Startknopf unter der Uhr: Pille in der Farbe der Zeitscheibe (Farbe gleitet mit),
+ * Symbol und Text wechseln mit einer weichen Überblendung.
+ */
+@Composable
+fun StartKnopf(zustand: StartZustand, farbe: Color, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val quelle = remember { MutableInteractionSource() }
+    val hintergrund by animateColorAsState(farbe, tween(450), label = "startFarbe")
+    Box(
+        modifier = modifier
+            .drueckFeder(quelle)
+            .height(96.dp)
+            .width(300.dp)
+            .shadow(10.dp, RoundedCornerShape(50), ambientColor = hintergrund, spotColor = hintergrund)
+            .clip(RoundedCornerShape(50))
+            .background(hintergrund)
+            .clickable(interactionSource = quelle, indication = null, role = Role.Button, onClick = onClick)
+            .semantics { contentDescription = zustand.text },
+        contentAlignment = Alignment.Center
+    ) {
+        AnimatedContent(
+            targetState = zustand,
+            transitionSpec = {
+                (fadeIn(tween(220)) + scaleIn(tween(260), initialScale = 0.7f)) togetherWith
+                    (fadeOut(tween(160)) + scaleOut(tween(200), targetScale = 0.7f))
+            },
+            label = "startInhalt"
+        ) { z ->
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                SymbolBild(z.symbol, Color.White, Modifier.size(38.dp))
+                Spacer(Modifier.width(16.dp))
+                Text(z.text, color = Color.White, fontSize = 38.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+            }
+        }
+    }
+}
+
 /** Runder Knopf mit Inhalt (Symbol oder Text). */
 @Composable
 fun RundKnopf(
@@ -135,13 +209,15 @@ fun RundKnopf(
     aktiviert: Boolean = true,
     inhalt: @Composable BoxScope.() -> Unit
 ) {
+    val quelle = remember { MutableInteractionSource() }
     Box(
         modifier = modifier
+            .drueckFeder(quelle)
             .size(groesse)
             .shadow(if (farbe == Color.Transparent) 0.dp else 3.dp, CircleShape)
             .clip(CircleShape)
             .background(farbe)
-            .clickable(enabled = aktiviert, role = Role.Button, onClick = onClick)
+            .clickable(interactionSource = quelle, indication = androidx.compose.material3.ripple(), enabled = aktiviert, role = Role.Button, onClick = onClick)
             .semantics { contentDescription = beschreibung },
         contentAlignment = Alignment.Center,
         content = inhalt

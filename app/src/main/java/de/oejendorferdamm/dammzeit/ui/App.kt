@@ -5,7 +5,27 @@ import android.os.Build
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.withFrameMillis
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
@@ -69,7 +89,34 @@ fun DammZeitApp() {
     val abgelaufen = timer.abgelaufen(jetzt)
     val laeuft = timer.laeuft && !abgelaufen
     val anzeigeDauer = gezogeneDauer ?: timer.dauerMs
-    val anzeigeRest = gezogeneDauer ?: timer.restMs(jetzt)
+    val zielRest = gezogeneDauer ?: timer.restMs(jetzt)
+
+    // Läuft die Uhr oder wird gerade gezogen, folgt die Scheibe exakt der Zeit. Sonst (Zurücksetzen,
+    // Ton gestoppt, neue Zeit ohne Sofortstart) gleitet sie weich mit einer Feder an ihr Ziel.
+    val direkt = laeuft || gezogeneDauer != null
+    val gleitend = remember { Animatable(zielRest.toFloat()) }
+    val zielAktuell by rememberUpdatedState(zielRest)
+    LaunchedEffect(direkt) {
+        if (direkt) while (true) {
+            gleitend.snapTo(zielAktuell.toFloat())
+            withFrameMillis { }
+        }
+    }
+    LaunchedEffect(zielRest, direkt) {
+        if (!direkt) gleitend.animateTo(zielRest.toFloat(), spring(dampingRatio = 0.8f, stiffness = 90f))
+    }
+    val anzeigeRest = if (direkt) zielRest else gleitend.value.toLong().coerceAtLeast(0L)
+    val klingelnd = klingelt != null || abgelaufen
+    val frisch = !timer.laeuft && !timer.pausiert && !klingelnd
+    val startZustand = when {
+        klingelnd -> StartZustand.STOPP
+        laeuft -> StartZustand.PAUSE
+        timer.pausiert -> StartZustand.WEITER
+        else -> StartZustand.START
+    }
+    val scheibenFarbe = Color(
+        ZifferblattZeichner.sektorFarbe(einstellungen.farbe, einstellungen.eigeneFarbe, anzeigeRest.coerceAtLeast(1L), anzeigeDauer)
+    )
 
     val view = LocalView.current
     val anlassen = laeuft && einstellungen.bildschirmAn
@@ -110,7 +157,9 @@ fun DammZeitApp() {
     val grund = Color(ZifferblattZeichner.flaechenFarbe(einstellungen.hintergrund))
     val schrift = Color(ZifferblattZeichner.schriftFarbe(einstellungen.hintergrund))
 
-    Box(Modifier.fillMaxSize().background(grund)) {
+    // Leichter Verlauf nach unten gibt der Fläche Tiefe.
+    val verlauf = Brush.verticalGradient(listOf(lerp(grund, Color.White, 0.05f), grund, lerp(grund, Color.Black, 0.07f)))
+    Box(Modifier.fillMaxSize().background(verlauf)) {
         VorbildRaster(faktor = 1f) {
             Row(Modifier.fillMaxSize().systemBarsPadding()) {
                 // --- Die Uhr ---
@@ -126,26 +175,79 @@ fun DammZeitApp() {
                                 fontWeight = FontWeight.SemiBold, letterSpacing = 2.sp
                             )
                         }
-                        Zifferblatt(
-                            restMs = anzeigeRest,
-                            dauerMs = anzeigeDauer,
-                            einstellungen = einstellungen,
-                            modifier = Modifier.weight(1f).fillMaxWidth(),
-                            onZiehen = { neu -> gezogeneDauer = neu },
-                            onLoslassen = {
-                                gezogeneDauer?.let { TimerSteuerung.setzeDauer(context, it, starten = einstellungen.sofortStarten) }
-                                gezogeneDauer = null
-                            },
-                            onTippen = { TimerSteuerung.antippen(context) }
-                        )
-                        when {
-                            klingelt != null || abgelaufen -> Text(
-                                "Zeit ist um – zum Stoppen auf die Uhr tippen", color = Akzent, fontSize = 44.sp,
-                                fontWeight = FontWeight.Bold
+                        Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                            // Klingelt es, pulsiert ein Leuchten hinter der Uhr und sie "atmet" leicht.
+                            val puls = if (klingelnd) {
+                                val t = rememberInfiniteTransition(label = "klingeln")
+                                t.animateFloat(0f, 1f, infiniteRepeatable(tween(750), RepeatMode.Reverse), label = "puls").value
+                            } else 0f
+                            if (klingelnd) {
+                                Canvas(Modifier.fillMaxSize()) {
+                                    val r = size.minDimension * 0.31f * (1.08f + 0.14f * puls)
+                                    drawCircle(
+                                        Brush.radialGradient(
+                                            listOf(Akzent.copy(alpha = 0.45f * (0.5f + 0.5f * puls)), Color.Transparent),
+                                            center = center, radius = r * 1.25f
+                                        ),
+                                        radius = r * 1.25f
+                                    )
+                                }
+                            }
+                            Zifferblatt(
+                                restMs = anzeigeRest,
+                                dauerMs = anzeigeDauer,
+                                einstellungen = einstellungen,
+                                modifier = Modifier.fillMaxSize().graphicsLayer {
+                                    val f = 1f + 0.018f * puls
+                                    scaleX = f
+                                    scaleY = f
+                                },
+                                onZiehen = { neu -> gezogeneDauer = neu },
+                                onLoslassen = {
+                                    gezogeneDauer?.let { TimerSteuerung.setzeDauer(context, it, starten = einstellungen.sofortStarten) }
+                                    gezogeneDauer = null
+                                },
+                                onTippen = { TimerSteuerung.antippen(context) }
                             )
-                            einstellungen.restzeitAnzeigen -> Text(
-                                formatiereDauer(anzeigeRest), color = schrift, fontSize = 72.sp, fontWeight = FontWeight.Bold
-                            )
+                        }
+                        // Statuszeile blendet weich über.
+                        val status = when {
+                            klingelnd -> "Zeit ist um!"
+                            einstellungen.restzeitAnzeigen -> formatiereDauer(anzeigeRest)
+                            else -> ""
+                        }
+                        AnimatedContent(
+                            targetState = status,
+                            transitionSpec = { fadeIn(tween(250)) togetherWith fadeOut(tween(200)) },
+                            label = "status"
+                        ) { text ->
+                            if (text.isNotEmpty()) {
+                                Text(
+                                    text,
+                                    color = if (klingelnd) Akzent else schrift,
+                                    fontSize = if (klingelnd) 48.sp else 64.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                        Spacer(Modifier.size(18.dp))
+                        // Startknopf in der Mitte, links daneben (nur wenn sinnvoll) Zurücksetzen.
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(Modifier.size(84.dp), contentAlignment = Alignment.Center) {
+                                AnimatedVisibility(
+                                    visible = !frisch,
+                                    enter = fadeIn(tween(250)) + scaleIn(tween(300), initialScale = 0.6f),
+                                    exit = fadeOut(tween(200)) + scaleOut(tween(200), targetScale = 0.6f)
+                                ) {
+                                    RundKnopf("Zurücksetzen", { TimerSteuerung.zuruecksetzen(context) }, groesse = 84.dp) {
+                                        SymbolBild(Symbol.ZURUECK, Text1, Modifier.size(40.dp))
+                                    }
+                                }
+                            }
+                            Spacer(Modifier.size(36.dp))
+                            StartKnopf(startZustand, if (klingelnd) Akzent else scheibenFarbe, onClick = { TimerSteuerung.antippen(context) })
+                            Spacer(Modifier.size(36.dp))
+                            Spacer(Modifier.size(84.dp))
                         }
                     }
 

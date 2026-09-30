@@ -2,6 +2,7 @@ package de.oejendorferdamm.dammzeit.ui
 
 import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.LinearGradient
 import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.RadialGradient
@@ -27,7 +28,7 @@ object ZifferblattZeichner {
     private val scheibe = Paint(Paint.ANTI_ALIAS_FLAG)
     private val scheibenRand = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE }
     private val sektor = Paint(Paint.ANTI_ALIAS_FLAG)
-    private val strich = Paint(Paint.ANTI_ALIAS_FLAG).apply { strokeCap = Paint.Cap.BUTT }
+    private val strich = Paint(Paint.ANTI_ALIAS_FLAG).apply { strokeCap = Paint.Cap.ROUND }
     private val schrift = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
         textAlign = Paint.Align.CENTER
@@ -35,8 +36,18 @@ object ZifferblattZeichner {
     }
     private val knopf = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.rgb(0x1E, 0x1E, 0x1E) }
     private val nullLinie = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.rgb(0xB8, 0xBB, 0xC0) }
+    private val schatten = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val luenette = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE }
+    private val glanz = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val kante = Paint(Paint.ANTI_ALIAS_FLAG).apply { strokeCap = Paint.Cap.ROUND }
+    private val knopfGlanz = Paint(Paint.ANTI_ALIAS_FLAG)
     private val pfad = Path()
     private val rechteck = RectF()
+
+    // Verläufe nur neu anlegen, wenn sich Größe/Farben ändern – nicht in jedem Bild (flüssiger).
+    private var cacheSchluessel = ""
+    private var cacheSektorFarbe = 0
+    private var cacheSektorOrt = ""
 
     /** Farben eines Erscheinungsbilds (Hintergrund, Scheibe, Striche, Schrift). */
     private class Stil(val flaeche: Int, val scheibeInnen: Int, val scheibeMitte: Int, val scheibeRand: Int, val strichLang: Int, val strichKurz: Int, val schrift: Int, val knopf: Int)
@@ -79,20 +90,56 @@ object ZifferblattZeichner {
         val cx = breite / 2f
         val cy = hoehe / 2f
         val radius = seite * (if (mitZahlen) 0.31f else 0.40f)
+        val dunkel = hintergrund == Hintergrund.DUNKEL || hintergrund == Hintergrund.SCHWARZ
 
-        // Scheibe mit leichtem Verlauf: innen heller, zum Rand etwas dunkler (wie im Original).
-        scheibe.shader = RadialGradient(
-            cx, cy, radius,
-            intArrayOf(s.scheibeInnen, s.scheibeMitte, s.scheibeRand),
-            floatArrayOf(0f, 0.86f, 1f), Shader.TileMode.CLAMP
-        )
+        val schluessel = "$breite/$hoehe/$radius/${hintergrund.name}"
+        if (schluessel != cacheSchluessel) {
+            cacheSchluessel = schluessel
+            // Weicher Schatten unter der Scheibe – als Verlauf statt setShadowLayer, das auf
+            // älteren Android-Versionen mit Hardwarebeschleunigung nicht gezeichnet wird.
+            val schattenAlpha = if (dunkel) 110 else 60
+            schatten.shader = RadialGradient(
+                cx, cy + seite * 0.012f, radius * 1.12f,
+                intArrayOf(Color.argb(schattenAlpha, 0, 0, 0), Color.argb(schattenAlpha, 0, 0, 0), Color.argb(0, 0, 0, 0)),
+                floatArrayOf(0f, 0.86f, 1f), Shader.TileMode.CLAMP
+            )
+            // Scheibe mit leichtem Verlauf: innen heller, zum Rand etwas dunkler (wie im Original).
+            scheibe.shader = RadialGradient(
+                cx, cy, radius,
+                intArrayOf(s.scheibeInnen, s.scheibeMitte, s.scheibeRand),
+                floatArrayOf(0f, 0.86f, 1f), Shader.TileMode.CLAMP
+            )
+            // Glas-Schimmer auf der oberen Hälfte.
+            glanz.shader = LinearGradient(
+                cx, cy - radius, cx, cy + radius * 0.1f,
+                Color.argb(if (dunkel) 26 else 70, 255, 255, 255), Color.argb(0, 255, 255, 255), Shader.TileMode.CLAMP
+            )
+            // Mittelknopf mit Lichtreflex oben links.
+            knopfGlanz.shader = RadialGradient(
+                cx - seite * 0.014f, cy - seite * 0.016f, seite * 0.05f,
+                intArrayOf(Color.argb(if (dunkel) 90 else 120, 255, 255, 255), Color.argb(0, 255, 255, 255)),
+                null, Shader.TileMode.CLAMP
+            )
+        }
+
+        canvas.drawCircle(cx, cy + seite * 0.012f, radius * 1.12f, schatten)
         canvas.drawCircle(cx, cy, radius, scheibe)
 
         // Farbige Restzeit: von 0 (oben) gegen den Uhrzeigersinn.
         val skalaMs = skalaMinuten * 60_000f
         val anteil = (restMs / skalaMs).coerceIn(0f, 1f)
         if (anteil > 0f) {
-            sektor.color = sektorFarbe(farbModus, eigeneFarbe, restMs, dauerMs)
+            val farbe = sektorFarbe(farbModus, eigeneFarbe, restMs, dauerMs)
+            // Zur Mitte hin etwas heller: gibt der Scheibe Tiefe statt einer flachen Fläche.
+            if (farbe != cacheSektorFarbe || schluessel != cacheSektorOrt) {
+                cacheSektorFarbe = farbe
+                cacheSektorOrt = schluessel
+                sektor.shader = RadialGradient(
+                    cx, cy, radius,
+                    intArrayOf(mische(farbe, Color.WHITE, 0.22f), farbe, mische(farbe, Color.BLACK, 0.12f)),
+                    floatArrayOf(0f, 0.8f, 1f), Shader.TileMode.CLAMP
+                )
+            }
             rechteck.set(cx - radius, cy - radius, cx + radius, cy + radius)
             pfad.reset()
             pfad.moveTo(cx, cy)
@@ -103,11 +150,25 @@ object ZifferblattZeichner {
                 pfad.close()
             }
             canvas.drawPath(pfad, sektor)
+            // Feine, dunklere Kante an der wandernden Grenze – wirkt wie ein echtes Blatt.
+            if (anteil < 0.9999f) {
+                val w = Math.toRadians(-90.0 - 360.0 * anteil)
+                kante.color = mische(farbe, Color.BLACK, 0.35f)
+                kante.strokeWidth = seite * 0.005f
+                canvas.drawLine(cx, cy, cx + cos(w).toFloat() * radius, cy + sin(w).toFloat() * radius, kante)
+            }
         }
+
+        // Glas-Schimmer über Scheibe und Restzeit.
+        canvas.drawCircle(cx, cy, radius, glanz)
 
         scheibenRand.strokeWidth = seite * 0.004f
         scheibenRand.color = Color.argb(40, 0, 0, 0)
         canvas.drawCircle(cx, cy, radius, scheibenRand)
+        // Dezente Lünette außen um die Scheibe.
+        luenette.strokeWidth = seite * 0.006f
+        luenette.color = if (dunkel) Color.argb(60, 255, 255, 255) else Color.argb(160, 255, 255, 255)
+        canvas.drawCircle(cx, cy, radius + seite * 0.006f, luenette)
 
         // 60 Striche: alle 5 lang und kräftig, dazwischen kurz und grau.
         for (i in 0 until 60) {
@@ -157,6 +218,7 @@ object ZifferblattZeichner {
             strich
         )
         canvas.drawCircle(cx, cy, seite * 0.042f, knopf)
+        canvas.drawCircle(cx, cy, seite * 0.042f, knopfGlanz)
     }
 
     /** Beschriftung alle 5 Minuten bei 60, alle 10 bei 120, jede Minute bei kleinen Skalen. */
@@ -189,7 +251,7 @@ object ZifferblattZeichner {
         }
     }
 
-    private fun mische(a: Int, b: Int, t: Float): Int {
+    fun mische(a: Int, b: Int, t: Float): Int {
         fun kanal(x: Int, y: Int) = (x + (y - x) * t).toInt().coerceIn(0, 255)
         return Color.rgb(
             kanal(Color.red(a), Color.red(b)),

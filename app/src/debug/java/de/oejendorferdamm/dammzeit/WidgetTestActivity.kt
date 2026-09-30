@@ -33,12 +33,15 @@ class WidgetTestActivity : Activity() {
 
     private val neu = object : Runnable {
         override fun run() {
-            klein.removeAllViews()
-            gross.removeAllViews()
-            klein.addView(WidgetAktualisierer.baue(this@WidgetTestActivity, gross = false, groesse(260)).apply(this@WidgetTestActivity, klein))
-            gross.addView(WidgetAktualisierer.baue(this@WidgetTestActivity, gross = true, groesse(460)).apply(this@WidgetTestActivity, gross))
-            handler.postDelayed(this, 1000)
+            // Wie der Startbildschirm: vorhandene Ansicht nur aktualisieren (reapply), nicht neu aufbauen.
+            zeige(klein, WidgetAktualisierer.baue(this@WidgetTestActivity, gross = false, groesse(260)))
+            zeige(gross, WidgetAktualisierer.baue(this@WidgetTestActivity, gross = true, groesse(460)))
+            handler.postDelayed(this, 2000)
         }
+    }
+
+    private fun zeige(rahmen: FrameLayout, views: android.widget.RemoteViews) {
+        if (rahmen.childCount == 0) rahmen.addView(views.apply(this, rahmen)) else views.reapply(this, rahmen.getChildAt(0))
     }
 
     private fun groesse(dp: Int) = Bundle().apply {

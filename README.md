@@ -22,7 +22,7 @@ nicht für Handys.
   Klingelton (Gong, Glocke, Klangschale, Piepen, Wecker, Gerätewecker, still – mit
   Probehören), Klingeldauer bis „bis zum Antippen“, Lautstärke, sofort starten,
   Bildschirm anlassen
-- **Widgets 2 × 2 und 4 × 4**: nur die runde Uhr, antippen startet oder hält sie an
+- **Widgets 2 × 2 und 4 × 4**: die Uhr wie in der App mit großen Zahlen (auch von hinten im Raum lesbar), die Restzeit läuft sekundengenau auf der Scheibe mit; unten links Zurücksetzen, unten rechts Start/Pause/Stopp, oben rechts „Zeit einstellen“ (Auswahlfenster mit 1–60 Minuten oder eigener Zeit)
 - **Pünktlich auch im Hintergrund** und nach einem Neustart des Boards
 - **Automatische Updates** direkt aus den GitHub-Releases, mit Signaturprüfung
 - Die Oberfläche wird proportional zur Bildschirmbreite gezeichnet – auf einem 4K-Board

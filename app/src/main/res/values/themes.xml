@@ -5,4 +5,13 @@
         <item name="android:windowLightStatusBar">true</item>
         <item name="android:navigationBarColor">@color/hintergrund</item>
     </style>
+
+    <!-- Auswahlfenster "Zeit einstellen" (vom Widget): durchsichtig über dem Startbildschirm. -->
+    <style name="Theme.DammZeit.Auswahl" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:backgroundDimEnabled">false</item>
+        <item name="android:windowAnimationStyle">@android:style/Animation.Dialog</item>
+    </style>
 </resources>

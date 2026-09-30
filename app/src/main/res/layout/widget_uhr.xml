@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Nur die runde Uhr, ohne Rahmen – Antippen startet oder pausiert sie. -->
+<!--
+  Die Uhr wie in der App: Zifferblatt mit großen Zahlen, darauf unten die ablaufende Zeit.
+  Unten links Zurücksetzen, unten rechts Start/Pause/Stopp, oben rechts Zeit einstellen.
+-->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
@@ -10,4 +13,84 @@
         android:layout_height="match_parent"
         android:contentDescription="DammZeit-Uhr, antippen zum Starten oder Anhalten"
         android:scaleType="fitCenter" />
+
+    <!-- Restzeit auf dem unteren Teil der Scheibe -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center_horizontal"
+        android:orientation="vertical">
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="63" />
+
+        <FrameLayout
+            android:id="@+id/widget_rest_rahmen"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/widget_pille_hell"
+            android:paddingLeft="12dp"
+            android:paddingTop="2dp"
+            android:paddingRight="12dp"
+            android:paddingBottom="2dp">
+
+            <Chronometer
+                android:id="@+id/widget_rest"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="#1F2124"
+                android:textSize="22sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/widget_rest_ende"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Zeit um!"
+                android:textColor="#E01E3C"
+                android:textSize="22sp"
+                android:textStyle="bold"
+                android:visibility="gone" />
+        </FrameLayout>
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="37" />
+    </LinearLayout>
+
+    <ImageView
+        android:id="@+id/widget_zuruecksetzen"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_gravity="bottom|start"
+        android:layout_margin="4dp"
+        android:background="@drawable/widget_knopf_hell"
+        android:contentDescription="Zurücksetzen"
+        android:padding="11dp"
+        android:src="@drawable/ic_w_zurueck" />
+
+    <ImageView
+        android:id="@+id/widget_startstopp"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="4dp"
+        android:background="@drawable/widget_knopf_start"
+        android:contentDescription="Start oder Pause"
+        android:padding="11dp"
+        android:src="@drawable/ic_w_start" />
+
+    <ImageView
+        android:id="@+id/widget_zeit"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_gravity="top|end"
+        android:layout_margin="4dp"
+        android:background="@drawable/widget_knopf_hell"
+        android:contentDescription="Zeit einstellen"
+        android:padding="11dp"
+        android:src="@drawable/ic_w_zeit" />
 </FrameLayout>

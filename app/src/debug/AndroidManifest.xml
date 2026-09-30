@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Nur im Test-Build: Vorschau der Widgets für den Emulator-Test (dort lassen sich keine
+     echten Widgets auf den Startbildschirm legen). -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <activity
+            android:name=".WidgetTestActivity"
+            android:exported="true"
+            android:screenOrientation="sensorLandscape" />
+    </application>
+</manifest>

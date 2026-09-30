@@ -1,5 +1,5 @@
 <resources>
     <string name="app_name">DammZeit</string>
-    <string name="widget_klein_beschreibung">Die Uhr – antippen zum Starten (2×2)</string>
-    <string name="widget_gross_beschreibung">Die Uhr mit Zahlen – antippen zum Starten (4×4)</string>
+    <string name="widget_klein_beschreibung">Die Uhr mit Start, Zurücksetzen und Zeitwahl (2×2)</string>
+    <string name="widget_gross_beschreibung">Die Uhr groß mit Start, Zurücksetzen und Zeitwahl (4×4)</string>
 </resources>

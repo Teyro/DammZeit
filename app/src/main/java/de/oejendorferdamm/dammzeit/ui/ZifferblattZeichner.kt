@@ -70,6 +70,8 @@ object ZifferblattZeichner {
      * @param dauerMs Gesamtdauer (für Farbverläufe)
      * @param skalaMinuten Minuten für eine volle Umdrehung
      * @param mitZahlen Zahlen außen zeichnen (bei sehr kleinen Widgets weglassen)
+     * @param grosseZahlen größere, fette Zahlen – für Widgets, die man von weiter hinten im
+     *                     Raum lesen können soll
      */
     @Synchronized
     fun zeichne(
@@ -82,14 +84,15 @@ object ZifferblattZeichner {
         farbModus: FarbModus,
         eigeneFarbe: Int,
         hintergrund: Hintergrund,
-        mitZahlen: Boolean = true
+        mitZahlen: Boolean = true,
+        grosseZahlen: Boolean = false
     ) {
         val s = stil(hintergrund)
         val seite = min(breite, hoehe)
         if (seite <= 0f) return
         val cx = breite / 2f
         val cy = hoehe / 2f
-        val radius = seite * (if (mitZahlen) 0.31f else 0.40f)
+        val radius = seite * (if (!mitZahlen) 0.40f else if (grosseZahlen) 0.29f else 0.31f)
         val dunkel = hintergrund == Hintergrund.DUNKEL || hintergrund == Hintergrund.SCHWARZ
 
         val schluessel = "$breite/$hoehe/$radius/${hintergrund.name}"
@@ -189,8 +192,9 @@ object ZifferblattZeichner {
             val schritt = beschriftungsSchritt(skalaMinuten)
             val anzahl = skalaMinuten / schritt
             schrift.color = s.schrift
-            schrift.textSize = seite * 0.068f
-            val textRadius = radius + seite * 0.118f
+            schrift.textSize = seite * (if (grosseZahlen) 0.088f else 0.068f)
+            schrift.typeface = if (grosseZahlen) FETT else NORMAL
+            val textRadius = radius + seite * (if (grosseZahlen) 0.125f else 0.118f)
             val mitteText = (schrift.descent() + schrift.ascent()) / 2f
             for (k in 0 until anzahl) {
                 val winkel = Math.toRadians(-90.0 - k * 360.0 / anzahl)
@@ -228,6 +232,9 @@ object ZifferblattZeichner {
         skala <= 60 -> 5
         else -> 10
     }
+
+    private val NORMAL: Typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
+    private val FETT: Typeface = Typeface.create("sans-serif", Typeface.BOLD)
 
     private val ROT = Color.rgb(0xE0, 0x1E, 0x3C)
     private val DUNKELROT = Color.rgb(0x7A, 0x00, 0x14)

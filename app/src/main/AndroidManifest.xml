@@ -39,6 +39,13 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".ui.ZeitWahlActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:taskAffinity="de.oejendorferdamm.dammzeit.zeitwahl"
+            android:theme="@style/Theme.DammZeit.Auswahl" />
+
         <receiver android:name=".alarm.AlarmEmpfaenger" android:exported="false" />
 
         <receiver android:name=".alarm.StartEmpfaenger" android:exported="true">

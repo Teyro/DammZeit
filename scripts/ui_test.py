@@ -133,6 +133,25 @@ def main():
     time.sleep(2)
     screenshot("12_zurueckgesetzt.png")
 
+    # Widgets (Vorschau-Seite aus dem Test-Build, echte RemoteViews mit echten Knöpfen)
+    adb("shell", "am", "start", "-n", f"{PAKET}/.WidgetTestActivity")
+    time.sleep(3)
+    screenshot("13_widgets.png")
+    tippe("Start oder Pause")
+    time.sleep(4)
+    screenshot("14_widgets_laeuft.png")
+    tippe("Zeit einstellen")
+    time.sleep(3)
+    screenshot("15_zeit_einstellen.png")
+    tippe("5 Minuten")
+    time.sleep(3)
+    adb("shell", "am", "start", "-n", f"{PAKET}/.WidgetTestActivity")
+    time.sleep(3)
+    screenshot("16_widgets_5_minuten.png")
+    tippe("Zurücksetzen")
+    time.sleep(2)
+    screenshot("17_widgets_zurueckgesetzt.png")
+
     if not laeuft():
         print("FEHLER: App ist abgestürzt", file=sys.stderr)
     with open("logcat.txt", "w") as f:

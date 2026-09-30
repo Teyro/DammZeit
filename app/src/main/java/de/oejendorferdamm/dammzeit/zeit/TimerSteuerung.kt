@@ -36,8 +36,9 @@ object TimerSteuerung {
     }
 
     /**
-     * Antippen der Uhr: klingelt sie, wird der Ton gestoppt und die Uhr steht wieder auf der
-     * eingestellten Zeit; ist die Zeit um, geht es von vorn los; sonst Start bzw. Pause.
+     * Antippen der Uhr bzw. Startknopf: klingelt sie oder ist die Zeit um ("Stopp"), wird der
+     * Ton gestoppt und die Uhr steht wieder auf der eingestellten Zeit – bereit für "Start";
+     * sonst Start bzw. Pause.
      */
     fun antippen(context: Context) {
         val t = Speicher.timer.value
@@ -47,10 +48,7 @@ object TimerSteuerung {
                 KlingelDienst.stoppe(context)
                 zuruecksetzen(context)
             }
-            t.abgelaufen(jetzt) -> {
-                zuruecksetzen(context)
-                starten(context)
-            }
+            t.abgelaufen(jetzt) -> zuruecksetzen(context)
             t.laeuft -> pausieren(context)
             else -> starten(context)
         }

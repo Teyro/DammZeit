@@ -9,9 +9,12 @@ noch bleibt, und schrumpft in Echtzeit bis zur 0.
 Gemacht für **Touch-Boards (CleverTouch, CTOUCH) im Querformat**, Full HD und 4K –
 nicht für Handys.
 
-- **Nur die Uhr und ein Zahnrad**: Die Uhr füllt den Bildschirm. An der Scheibe ziehen
-  stellt die Zeit ein (wie beim echten Time Timer), die Uhr läuft danach sofort los.
-  Kurz antippen: anhalten, weiter – und wenn sie klingelt, den Ton stoppen
+- **Die Uhr, ein Startknopf und ein Zahnrad**: Die Uhr füllt den Bildschirm. An der Scheibe
+  ziehen stellt die Zeit ein (wie beim echten Time Timer). Der große Knopf darunter zeigt,
+  was als Nächstes geht: Start, Pause, Weiter – und wenn die Zeit um ist, Stopp. Daneben
+  erscheint bei Bedarf „Zurücksetzen“. Antippen der Uhr wirkt wie der Knopf.
+- **Flüssige Optik**: Scheibe mit Tiefe, Glanz und weichem Schatten; beim Zurücksetzen
+  gleitet sie federnd an ihren Platz, beim Klingeln pulsiert ein Leuchten hinter der Uhr
 - **Echtzeit**: Die farbige Scheibe schrumpft flüssig und sekundengenau bis zur 0
 - **Im Zahnrad alles einstellbar**: Farbe der Scheibe (klassisch rot, rot mit Verlauf ins
   Dunkelrote, Ampel grün → gelb → rot oder 12 eigene Farben), Hintergrund (hell, grau,

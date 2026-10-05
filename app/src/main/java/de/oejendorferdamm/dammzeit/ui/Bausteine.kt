@@ -56,6 +56,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import de.oejendorferdamm.dammzeit.data.Einstellungen
 import de.oejendorferdamm.dammzeit.model.FarbModus
+import de.oejendorferdamm.dammzeit.model.Laufrichtung
 import kotlin.math.atan2
 import kotlin.math.roundToLong
 
@@ -102,13 +103,14 @@ fun Zifferblatt(
     val ziehen by rememberUpdatedState(onZiehen)
     val loslassen by rememberUpdatedState(onLoslassen)
     val tippen by rememberUpdatedState(onTippen)
-    val bedienung = if (onZiehen == null && onTippen == null) Modifier else Modifier.pointerInput(skala) {
+    val imUhrzeigersinn = einstellungen.laufrichtung == Laufrichtung.IM_UHRZEIGERSINN
+    val bedienung = if (onZiehen == null && onTippen == null) Modifier else Modifier.pointerInput(skala, imUhrzeigersinn) {
         fun dauerFuer(p: Offset): Long {
             val dx = p.x - size.width / 2f
             val dy = p.y - size.height / 2f
-            // Winkel ab 12 Uhr gegen den Uhrzeigersinn (wie die Zahlen auf dem Zifferblatt).
+            // Winkel ab 12 Uhr in Laufrichtung der Zahlen auf dem Zifferblatt.
             var grad = Math.toDegrees(atan2(dx.toDouble(), -dy.toDouble()))
-            grad = (360.0 - grad) % 360.0
+            grad = if (imUhrzeigersinn) (grad + 360.0) % 360.0 else (360.0 - grad) % 360.0
             val schritt = if (skala <= 10) 15_000L else if (skala <= 30) 30_000L else 60_000L
             val roh = grad / 360.0 * skala * 60_000.0
             return ((roh / schritt).roundToLong() * schritt).coerceIn(schritt, skala * 60_000L)
@@ -135,7 +137,8 @@ fun Zifferblatt(
         drawIntoCanvas {
             ZifferblattZeichner.zeichne(
                 it.nativeCanvas, size.width, size.height, restMs, dauerMs, skala,
-                einstellungen.farbe, einstellungen.eigeneFarbe, einstellungen.hintergrund, mitZahlen
+                einstellungen.farbe, einstellungen.eigeneFarbe, einstellungen.hintergrund, mitZahlen,
+                imUhrzeigersinn = imUhrzeigersinn
             )
         }
     }

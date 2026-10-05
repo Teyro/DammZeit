@@ -112,7 +112,8 @@ object WidgetAktualisierer {
         ZifferblattZeichner.zeichne(
             Canvas(bild), seite.toFloat(), seite.toFloat(), rest, t.dauerMs,
             e.skalaMinuten, e.farbe, e.eigeneFarbe, e.hintergrund,
-            mitZahlen = e.zahlenAnzeigen, grosseZahlen = true
+            mitZahlen = e.zahlenAnzeigen, grosseZahlen = true,
+            imUhrzeigersinn = e.laufrichtung == de.oejendorferdamm.dammzeit.model.Laufrichtung.IM_UHRZEIGERSINN
         )
         views.setImageViewBitmap(R.id.widget_zifferblatt, bild)
 

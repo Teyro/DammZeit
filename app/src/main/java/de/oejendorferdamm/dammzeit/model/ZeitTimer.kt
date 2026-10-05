@@ -2,10 +2,17 @@ package de.oejendorferdamm.dammzeit.model
 
 /** Farbe der ablaufenden Zeitscheibe. */
 enum class FarbModus(val bezeichnung: String) {
+    PETROL("Blau-Türkis (wie Time Timer MOD)"),
     ROT("Klassisch rot"),
     VERLAUF("Rot, am Ende dunkler"),
     AMPEL("Ampel: grün, gelb, rot"),
     EIGENE("Eigene Farbe")
+}
+
+/** In welche Richtung die Zahlen laufen – und damit, auf welcher Seite die Zeitscheibe liegt. */
+enum class Laufrichtung(val bezeichnung: String) {
+    IM_UHRZEIGERSINN("Zahlen im Uhrzeigersinn, Scheibe rechts"),
+    GEGEN_UHRZEIGERSINN("Zahlen gegen den Uhrzeigersinn, Scheibe links")
 }
 
 /** Aussehen von Hintergrund und Zifferblatt. */
@@ -32,7 +39,7 @@ val SKALEN = listOf(5, 10, 15, 20, 30, 45, 60, 90, 120)
 
 /** Auswahl für eigene Farben der Zeitscheibe. */
 val EIGENE_FARBEN = listOf(
-    0xFFE01E3C, 0xFF7A0014, 0xFFF06A1D, 0xFFF2B705, 0xFF2EA043, 0xFF0B7A5B,
+    0xFF02546B, 0xFFE01E3C, 0xFF7A0014, 0xFFF06A1D, 0xFFF2B705, 0xFF2EA043, 0xFF0B7A5B,
     0xFF1E6FD9, 0xFF123E8C, 0xFF7B3FC4, 0xFFD6338A, 0xFF5B5F66, 0xFF1E1E1E
 ).map { it.toInt() }
 

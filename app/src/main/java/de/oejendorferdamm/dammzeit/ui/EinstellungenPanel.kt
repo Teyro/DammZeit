@@ -52,6 +52,7 @@ import de.oejendorferdamm.dammzeit.data.Einstellungen
 import de.oejendorferdamm.dammzeit.data.Speicher
 import de.oejendorferdamm.dammzeit.model.EIGENE_FARBEN
 import de.oejendorferdamm.dammzeit.model.FarbModus
+import de.oejendorferdamm.dammzeit.model.Laufrichtung
 import de.oejendorferdamm.dammzeit.model.Hintergrund
 import de.oejendorferdamm.dammzeit.model.SKALEN
 import de.oejendorferdamm.dammzeit.model.Ton
@@ -148,6 +149,14 @@ fun EinstellungenPanel(
             FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 SKALEN.forEach { s ->
                     Auswahl("$s Min", einstellungen.skalaMinuten == s, { aendere { it.copy(skalaMinuten = s) } }, schrift = 18.sp)
+                }
+            }
+            Spacer(Modifier.height(14.dp))
+            Text("Laufrichtung", color = Text2, fontSize = 17.sp)
+            Spacer(Modifier.height(8.dp))
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Laufrichtung.entries.forEach { r ->
+                    Auswahl(r.bezeichnung, einstellungen.laufrichtung == r, { aendere { it.copy(laufrichtung = r) } }, schrift = 18.sp)
                 }
             }
             Schalter("Zahlen am Rand", einstellungen.zahlenAnzeigen) { an -> aendere { it.copy(zahlenAnzeigen = an) } }

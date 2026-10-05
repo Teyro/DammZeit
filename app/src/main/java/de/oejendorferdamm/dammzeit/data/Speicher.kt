@@ -3,6 +3,7 @@ package de.oejendorferdamm.dammzeit.data
 import android.content.Context
 import android.content.SharedPreferences
 import de.oejendorferdamm.dammzeit.model.FarbModus
+import de.oejendorferdamm.dammzeit.model.Laufrichtung
 import de.oejendorferdamm.dammzeit.model.Hintergrund
 import de.oejendorferdamm.dammzeit.model.Ton
 import de.oejendorferdamm.dammzeit.model.ZeitTimer
@@ -32,8 +33,16 @@ object Speicher {
             endeUm = prefs.getLong("ende", 0L),
             restBeiPauseMs = prefs.getLong("pause", -1L)
         )
+        // 2.2.1: neue Standards (Blau-Türkis, Zahlen im Uhrzeigersinn) – einmalig auch für Geräte,
+        // die noch die alte Standardfarbe Rot hatten.
+        if (!prefs.getBoolean("standard_2_2_1", false)) {
+            val e = prefs.edit().putBoolean("standard_2_2_1", true)
+            if (prefs.getString("farbe", null) == FarbModus.ROT.name) e.remove("farbe")
+            e.commit()
+        }
         _einstellungen.value = Einstellungen(
-            farbe = FarbModus.entries.find { it.name == prefs.getString("farbe", null) } ?: FarbModus.ROT,
+            farbe = FarbModus.entries.find { it.name == prefs.getString("farbe", null) } ?: FarbModus.PETROL,
+            laufrichtung = Laufrichtung.entries.find { it.name == prefs.getString("laufrichtung", null) } ?: Laufrichtung.IM_UHRZEIGERSINN,
             eigeneFarbe = prefs.getInt("eigene_farbe", 0xFF1E6FD9.toInt()),
             hintergrund = Hintergrund.entries.find { it.name == prefs.getString("hintergrund", null) } ?: Hintergrund.HELL,
             skalaMinuten = prefs.getInt("skala", 60),
@@ -67,6 +76,7 @@ object Speicher {
         val neu = aenderung(_einstellungen.value)
         prefs.edit()
             .putString("farbe", neu.farbe.name)
+            .putString("laufrichtung", neu.laufrichtung.name)
             .putInt("eigene_farbe", neu.eigeneFarbe)
             .putString("hintergrund", neu.hintergrund.name)
             .putInt("skala", neu.skalaMinuten)
@@ -86,7 +96,8 @@ object Speicher {
 
 /** Alles, was sich im Zahnrad-Menü einstellen lässt. */
 data class Einstellungen(
-    val farbe: FarbModus = FarbModus.ROT,
+    val farbe: FarbModus = FarbModus.PETROL,
+    val laufrichtung: Laufrichtung = Laufrichtung.IM_UHRZEIGERSINN,
     val eigeneFarbe: Int = 0xFF1E6FD9.toInt(),
     val hintergrund: Hintergrund = Hintergrund.HELL,
     val skalaMinuten: Int = 60,

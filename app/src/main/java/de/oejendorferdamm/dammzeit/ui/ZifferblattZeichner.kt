@@ -85,8 +85,11 @@ object ZifferblattZeichner {
         eigeneFarbe: Int,
         hintergrund: Hintergrund,
         mitZahlen: Boolean = true,
-        grosseZahlen: Boolean = false
+        grosseZahlen: Boolean = false,
+        imUhrzeigersinn: Boolean = true
     ) {
+        // +1: Zahlen im Uhrzeigersinn (Scheibe rechts), -1: gegen den Uhrzeigersinn (Scheibe links).
+        val d = if (imUhrzeigersinn) 1.0 else -1.0
         val s = stil(hintergrund)
         val seite = min(breite, hoehe)
         if (seite <= 0f) return
@@ -128,7 +131,7 @@ object ZifferblattZeichner {
         canvas.drawCircle(cx, cy + seite * 0.012f, radius * 1.12f, schatten)
         canvas.drawCircle(cx, cy, radius, scheibe)
 
-        // Farbige Restzeit: von 0 (oben) gegen den Uhrzeigersinn.
+        // Farbige Restzeit: von 0 (oben) in Laufrichtung der Zahlen.
         val skalaMs = skalaMinuten * 60_000f
         val anteil = (restMs / skalaMs).coerceIn(0f, 1f)
         if (anteil > 0f) {
@@ -149,13 +152,13 @@ object ZifferblattZeichner {
             if (anteil >= 0.9999f) {
                 pfad.addCircle(cx, cy, radius, Path.Direction.CW)
             } else {
-                pfad.arcTo(rechteck, -90f, -360f * anteil, false)
+                pfad.arcTo(rechteck, -90f, d.toFloat() * 360f * anteil, false)
                 pfad.close()
             }
             canvas.drawPath(pfad, sektor)
             // Feine, dunklere Kante an der wandernden Grenze – wirkt wie ein echtes Blatt.
             if (anteil < 0.9999f) {
-                val w = Math.toRadians(-90.0 - 360.0 * anteil)
+                val w = Math.toRadians(-90.0 + d * 360.0 * anteil)
                 kante.color = mische(farbe, Color.BLACK, 0.35f)
                 kante.strokeWidth = seite * 0.005f
                 canvas.drawLine(cx, cy, cx + cos(w).toFloat() * radius, cy + sin(w).toFloat() * radius, kante)
@@ -176,7 +179,7 @@ object ZifferblattZeichner {
         // 60 Striche: alle 5 lang und kräftig, dazwischen kurz und grau.
         for (i in 0 until 60) {
             val lang = i % 5 == 0
-            val winkel = Math.toRadians((-90.0 - i * 6.0))
+            val winkel = Math.toRadians(-90.0 + d * i * 6.0)
             val innen = radius + seite * 0.018f
             val aussen = innen + seite * (if (lang) 0.045f else 0.025f)
             strich.strokeWidth = seite * (if (lang) 0.0075f else 0.004f)
@@ -197,7 +200,7 @@ object ZifferblattZeichner {
             val textRadius = radius + seite * (if (grosseZahlen) 0.125f else 0.118f)
             val mitteText = (schrift.descent() + schrift.ascent()) / 2f
             for (k in 0 until anzahl) {
-                val winkel = Math.toRadians(-90.0 - k * 360.0 / anzahl)
+                val winkel = Math.toRadians(-90.0 + d * k * 360.0 / anzahl)
                 val x = cx + cos(winkel).toFloat() * textRadius
                 val y = cy + sin(winkel).toFloat() * textRadius - mitteText
                 canvas.drawText("${k * schritt}", x, y, schrift)
@@ -211,7 +214,7 @@ object ZifferblattZeichner {
         }
 
         // Mittelknopf mit kleinem Zeiger zur Kante der Restzeit.
-        val zeigerWinkel = Math.toRadians(-90.0 - 360.0 * anteil)
+        val zeigerWinkel = Math.toRadians(-90.0 + d * 360.0 * anteil)
         knopf.color = s.knopf
         strich.color = knopf.color
         strich.strokeWidth = seite * 0.008f
@@ -237,6 +240,8 @@ object ZifferblattZeichner {
     private val FETT: Typeface = Typeface.create("sans-serif", Typeface.BOLD)
 
     private val ROT = Color.rgb(0xE0, 0x1E, 0x3C)
+    /** Blau-Türkis der Scheibe des Time Timer MOD „Lake Day Blue“ (aus dem Produktfoto gemessen). */
+    private val PETROL = Color.rgb(0x02, 0x54, 0x6B)
     private val DUNKELROT = Color.rgb(0x7A, 0x00, 0x14)
     private val GELB = Color.rgb(0xF2, 0xB7, 0x05)
     private val GRUEN = Color.rgb(0x2E, 0xA0, 0x43)
@@ -244,6 +249,7 @@ object ZifferblattZeichner {
     /** Farbe der Restzeit je nach Modus – Verläufe hängen von der verbleibenden Zeit ab. */
     fun sektorFarbe(modus: FarbModus, eigeneFarbe: Int, restMs: Long, dauerMs: Long): Int = when (modus) {
         FarbModus.ROT -> ROT
+        FarbModus.PETROL -> PETROL
         FarbModus.EIGENE -> eigeneFarbe
         // In den letzten 5 Minuten (bei kurzen Timern im letzten Drittel) langsam dunkelrot.
         FarbModus.VERLAUF -> {

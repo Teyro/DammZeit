@@ -175,7 +175,6 @@ def main():
     # Solange nichts läuft, Positionen merken – bei laufender Uhr wird uiautomator nie „ruhig“
     uhren = alle_grenzen("DammZeit-Uhr, antippen zum Starten oder Anhalten")
     s = knoten("Start oder Stopp")
-    w_zurueck = knoten("Zurücksetzen")
     w_einstellen = knoten("Zeit einstellen")
     tippe("Start oder Pause")
     time.sleep(4)
@@ -189,9 +188,11 @@ def main():
     adb("shell", "am", "start", "-n", f"{PAKET}/.WidgetTestActivity")
     time.sleep(3)
     screenshot("16_widgets_5_minuten.png")
-    if w_zurueck:
-        tap(*mitte(w_zurueck))
-    time.sleep(2)
+    tippe("Start oder Pause")  # anhalten
+    time.sleep(1)
+    # Zurücksetzen über die Test-Seite (der Knopf war beim Merken unsichtbar, weil die Uhr ruhte)
+    adb("shell", "am", "start", "-S", "-n", f"{PAKET}/.WidgetTestActivity", "--ez", "zuruecksetzen", "true")
+    time.sleep(3)
     screenshot("17_widgets_zurueckgesetzt.png")
 
     # Stoppuhr-Widget: starten, zwei Runden, stoppen, speichern
@@ -266,13 +267,12 @@ def main():
 
     # Timer-Widget: auf die Zahl rechts neben der Mitte tippen
     if uhren:
-        adb("shell", "am", "start", "-n", f"{PAKET}/.WidgetTestActivity")
+        # -S: sonst holt Android nur die Aufgabe mit der App obenauf nach vorn
+        adb("shell", "am", "start", "-S", "-n", f"{PAKET}/.WidgetTestActivity")
         time.sleep(3)
         g = max(uhren, key=lambda r: (r[2] - r[0]))
         cx, cy, b = (g[0] + g[2]) // 2, (g[1] + g[3]) // 2, (g[2] - g[0])
         tap(cx + int(b * 0.41), cy)
-        time.sleep(3)
-        adb("shell", "am", "start", "-n", f"{PAKET}/.WidgetTestActivity")
         time.sleep(3)
         screenshot("24_widget_zahl_angetippt.png")
 

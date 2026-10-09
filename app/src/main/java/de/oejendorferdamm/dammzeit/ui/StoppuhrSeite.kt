@@ -139,9 +139,10 @@ private fun lerpFarbe(a: Color, b: Color, t: Float) = Color(a.red + (b.red - a.r
 /** Runden: neueste oben; schnellste grün, langsamste rot. */
 @Composable
 private fun RundenListe(runden: List<Long>, modifier: Modifier) {
-    val dauern = runden.mapIndexed { i, t -> t - (runden.getOrNull(i - 1) ?: 0L) }
-    val beste = if (dauern.size > 1) dauern.min() else -1L
-    val schlechteste = if (dauern.size > 1) dauern.max() else -1L
+    // in Hundertsteln vergleichen, wie angezeigt: gleich aussehende Runden nicht grün und rot färben
+    val dauern = runden.mapIndexed { i, t -> (t - (runden.getOrNull(i - 1) ?: 0L)) / 10 * 10 }
+    val beste = if (dauern.size > 1 && dauern.min() != dauern.max()) dauern.min() else -1L
+    val schlechteste = if (beste >= 0) dauern.max() else -1L
     Column(modifier.shadow(3.dp, RoundedCornerShape(28.dp)).clip(RoundedCornerShape(28.dp)).background(Karte).padding(26.dp)) {
         Text("Runden", color = Text1, fontSize = 30.sp, fontWeight = FontWeight.Bold)
         Spacer(Modifier.height(12.dp))

@@ -52,12 +52,17 @@ object StoppuhrWidget {
     fun baue(context: Context, optionen: Bundle?): RemoteViews {
         val u = StoppuhrSpeicher.uhr.value
         val zeit = u.zeitMs(System.currentTimeMillis())
-        val v = RemoteViews(context.packageName, R.layout.widget_stoppuhr)
-
-        // Schriftgröße nach Widgetgröße – groß genug für die hinteren Reihen
         val hoeheDp = optionen?.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT)?.takeIf { it > 0 } ?: 110
         val breiteDp = optionen?.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH)?.takeIf { it > 0 } ?: 250
-        v.setTextViewTextSize(R.id.stopp_zeit, TypedValue.COMPLEX_UNIT_DIP, minOf(hoeheDp * 0.36f, breiteDp * 0.2f).coerceIn(28f, 140f))
+        // Flache Widgets: Zeit links, Knöpfe rechts; sonst Knöpfe unter der Zeit
+        val flach = hoeheDp < 180
+        val v = RemoteViews(context.packageName, if (flach) R.layout.widget_stoppuhr_breit else R.layout.widget_stoppuhr)
+
+        // Schriftgröße nach dem Platz, der neben bzw. über den Knöpfen bleibt – groß genug für die hinteren Reihen
+        val schrift = if (flach) minOf((hoeheDp - 16 - 34) / 1.2f, (breiteDp - 16 - 110) * 0.25f)
+        else minOf((hoeheDp - 20 - 22 - 20 - 66) / 1.2f, breiteDp * 0.2f)
+        v.setTextViewTextSize(R.id.stopp_zeit, TypedValue.COMPLEX_UNIT_DIP, schrift.coerceIn(22f, 140f))
+        v.setViewVisibility(R.id.stopp_kopf, if (flach && hoeheDp < 120) View.GONE else View.VISIBLE)
 
         // Chronometer zählt live hoch; angehalten zeigt er die gestoppte Zeit
         v.setChronometerCountDown(R.id.stopp_zeit, false)

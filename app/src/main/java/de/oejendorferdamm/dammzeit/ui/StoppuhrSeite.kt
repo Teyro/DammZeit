@@ -105,7 +105,8 @@ fun StoppuhrAnsicht(schrift: Color, modifier: Modifier = Modifier, onSpeichern: 
                 }
             }
         }
-        if (uhr.runden.isNotEmpty()) RundenListe(uhr.runden, Modifier.width(560.dp).fillMaxHeight().padding(top = 140.dp, bottom = 40.dp, end = 40.dp))
+        // Immer Platz für die Runden lassen, damit die Knöpfe beim ersten Rundendruck nicht wegspringen
+        RundenListe(uhr.runden, Modifier.width(560.dp).fillMaxHeight().padding(top = 140.dp, bottom = 40.dp, end = 40.dp))
     }
 }
 
@@ -144,6 +145,7 @@ private fun RundenListe(runden: List<Long>, modifier: Modifier) {
     Column(modifier.shadow(3.dp, RoundedCornerShape(28.dp)).clip(RoundedCornerShape(28.dp)).background(Karte).padding(26.dp)) {
         Text("Runden", color = Text1, fontSize = 30.sp, fontWeight = FontWeight.Bold)
         Spacer(Modifier.height(12.dp))
+        if (runden.isEmpty()) Text("Mit der Fahne hältst du Runden fest.", color = Text2, fontSize = 24.sp)
         LazyColumn {
             itemsIndexed(dauern.reversed()) { j, d ->
                 val nr = dauern.size - j

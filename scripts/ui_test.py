@@ -169,7 +169,7 @@ def main():
     screenshot("12_zurueckgesetzt.png")
 
     # Widgets (Vorschau-Seite aus dem Test-Build, echte RemoteViews mit echten Knöpfen)
-    adb("shell", "am", "start", "-n", f"{PAKET}/.WidgetTestActivity")
+    adb("shell", "am", "start", "-S", "-n", f"{PAKET}/.WidgetTestActivity", "--ez", "zuruecksetzen", "true")
     time.sleep(3)
     screenshot("13_widgets.png")
     # Solange nichts läuft, Positionen merken – bei laufender Uhr wird uiautomator nie „ruhig“

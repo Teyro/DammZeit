@@ -9,6 +9,7 @@ import android.widget.FrameLayout
 import android.widget.LinearLayout
 import de.oejendorferdamm.dammzeit.data.Speicher
 import de.oejendorferdamm.dammzeit.widget.WidgetAktualisierer
+import de.oejendorferdamm.dammzeit.zeit.TimerSteuerung
 
 /** Zeigt beide Widgets so, wie der Startbildschirm sie aus den RemoteViews aufbaut – inklusive echter Knöpfe. */
 class WidgetTestActivity : Activity() {
@@ -25,6 +26,8 @@ class WidgetTestActivity : Activity() {
         gross = FrameLayout(this)
         stoppuhr = FrameLayout(this)
         de.oejendorferdamm.dammzeit.stoppuhr.StoppuhrSpeicher.init(this)
+        // Für den Test: mit ruhender Uhr beginnen, damit uiautomator die Knöpfe findet
+        if (intent.getBooleanExtra("zuruecksetzen", false)) TimerSteuerung.zuruecksetzen(this)
         val zeile = LinearLayout(this).apply {
             gravity = Gravity.CENTER
             setBackgroundColor(0xFF3A6EA5.toInt())

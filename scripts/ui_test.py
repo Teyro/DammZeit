@@ -78,6 +78,33 @@ def laeuft():
     return r.returncode == 0 and r.stdout.strip() != ""
 
 
+def alle_grenzen(*namen):
+    ergebnis = []
+    for _ in range(3):
+        if adb("shell", "uiautomator", "dump", "/sdcard/d.xml").returncode == 0 and adb("pull", "/sdcard/d.xml", "d.xml").returncode == 0:
+            try:
+                for k in ET.parse("d.xml").iter("node"):
+                    if k.get("content-desc") in namen or k.get("text") in namen:
+                        ergebnis.append([int(v) for v in k.get("bounds").replace("][", ",").strip("[]").split(",")])
+                return ergebnis
+            except ET.ParseError:
+                pass
+        time.sleep(1.5)
+    return ergebnis
+
+
+def alle_grenzen_klasse(klasse):
+    ergebnis = []
+    if adb("shell", "uiautomator", "dump", "/sdcard/d.xml").returncode == 0 and adb("pull", "/sdcard/d.xml", "d.xml").returncode == 0:
+        try:
+            for k in ET.parse("d.xml").iter("node"):
+                if k.get("class") == klasse:
+                    ergebnis.append([int(v) for v in k.get("bounds").replace("][", ",").strip("[]").split(",")])
+        except ET.ParseError:
+            pass
+    return ergebnis
+
+
 def main():
     os.makedirs(ORDNER, exist_ok=True)
     adb("shell", "pm", "grant", PAKET, "android.permission.POST_NOTIFICATIONS")
@@ -151,6 +178,72 @@ def main():
     tippe("Zurücksetzen")
     time.sleep(2)
     screenshot("17_widgets_zurueckgesetzt.png")
+
+    # Timer-Widget: auf die Zahl rechts tippen (bei Uhrzeigersinn = 15 auf dem 60er-Zifferblatt)
+    z = alle_grenzen("DammZeit-Uhr, antippen zum Starten oder Anhalten")
+    if len(z) >= 2:
+        g = max(z, key=lambda r: (r[2] - r[0]))
+        cx, cy, b = (g[0] + g[2]) // 2, (g[1] + g[3]) // 2, (g[2] - g[0])
+        adb("shell", "input", "tap", str(cx + int(b * 0.41)), str(cy))
+        time.sleep(3)
+        adb("shell", "am", "start", "-n", f"{PAKET}/.WidgetTestActivity")
+        time.sleep(3)
+        screenshot("18_widget_zahl_angetippt.png")
+
+    # Stoppuhr-Widget: starten, Runde, stoppen, speichern
+    tippe("Start oder Stopp")
+    time.sleep(3)
+    tippe("Runde")
+    time.sleep(2)
+    screenshot("19_stoppuhr_widget_laeuft.png")
+    tippe("Start oder Stopp")
+    time.sleep(2)
+    tippe("Zeit speichern")
+    time.sleep(3)
+    felder = alle_grenzen_klasse("android.widget.EditText")
+    if felder:
+        f = felder[0]
+        adb("shell", "input", "tap", str((f[0] + f[2]) // 2), str((f[1] + f[3]) // 2))
+        adb("shell", "input", "text", "Lea")
+    if len(felder) > 1:
+        f = felder[1]
+        adb("shell", "input", "tap", str((f[0] + f[2]) // 2), str((f[1] + f[3]) // 2))
+        adb("shell", "input", "text", "Hampelmann")
+    adb("shell", "input", "keyevent", "111")  # Tastatur zu
+    time.sleep(1)
+    screenshot("20_speichern_dialog.png")
+    tippe("Speichern")
+    time.sleep(2)
+    screenshot("21_platz.png")
+
+    # Stoppuhr in der App: drei weitere Kinder für ein volles Treppchen
+    adb("shell", "am", "start", "-n", f"{PAKET}/.MainActivity")
+    time.sleep(3)
+    tippe("Stoppuhr")
+    time.sleep(2)
+    for name, sekunden in (("Ben", 2), ("Mia", 5), ("Tom", 3)):
+        tippe("Zurücksetzen")
+        time.sleep(1)
+        tippe("Start")
+        time.sleep(sekunden / 2)
+        tippe("Runde")
+        time.sleep(sekunden / 2)
+        if name == "Mia":
+            screenshot("22_stoppuhr_app_laeuft.png")
+        tippe("Stopp")
+        time.sleep(1)
+        tippe("Zeit speichern")
+        time.sleep(2)
+        felder = alle_grenzen_klasse("android.widget.EditText")
+        if felder:
+            f = felder[0]
+            adb("shell", "input", "tap", str((f[0] + f[2]) // 2), str((f[1] + f[3]) // 2))
+            adb("shell", "input", "text", name)
+        adb("shell", "input", "keyevent", "111")
+        time.sleep(1)
+        tippe("Speichern")
+        time.sleep(3)
+    screenshot("23_bestenliste.png")
 
     if not laeuft():
         print("FEHLER: App ist abgestürzt", file=sys.stderr)

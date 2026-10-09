@@ -42,6 +42,9 @@ import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.foundation.clickable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -82,6 +85,11 @@ fun DammZeitApp() {
     val einstellungen by Speicher.einstellungen.collectAsState()
     val klingelt by KlingelDienst.klingelt.collectAsState()
     var menueOffen by remember { mutableStateOf(false) }
+    val stoppuhrModus by de.oejendorferdamm.dammzeit.stoppuhr.Ansicht.stoppuhr.collectAsState()
+    val bestenliste by de.oejendorferdamm.dammzeit.stoppuhr.Ansicht.bestenliste.collectAsState()
+    val neuerEintrag by de.oejendorferdamm.dammzeit.stoppuhr.Ansicht.neu.collectAsState()
+    var speichernOffen by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { de.oejendorferdamm.dammzeit.stoppuhr.StoppuhrSpeicher.init(context) }
     // Während des Ziehens zeigt die Uhr die neue Zeit, gespeichert wird erst beim Loslassen.
     var gezogeneDauer by remember { mutableStateOf<Long?>(null) }
 
@@ -125,7 +133,13 @@ fun DammZeitApp() {
         onDispose { view.keepScreenOn = false }
     }
 
-    BackHandler(enabled = menueOffen) { menueOffen = false }
+    BackHandler(enabled = menueOffen || speichernOffen || bestenliste != null) {
+        when {
+            speichernOffen -> speichernOffen = false
+            bestenliste != null -> de.oejendorferdamm.dammzeit.stoppuhr.Ansicht.bestenliste.value = null
+            else -> menueOffen = false
+        }
+    }
 
     // Benachrichtigung "Zeit ist um" braucht ab Android 13 eine Erlaubnis.
     val erlaubnis = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
@@ -164,7 +178,11 @@ fun DammZeitApp() {
             Row(Modifier.fillMaxSize().systemBarsPadding()) {
                 // --- Die Uhr ---
                 Box(Modifier.weight(1f).fillMaxHeight()) {
-                    Column(
+                    if (stoppuhrModus) StoppuhrAnsicht(
+                        schrift, Modifier.fillMaxSize(),
+                        onSpeichern = { speichernOffen = true },
+                        onBestenliste = { de.oejendorferdamm.dammzeit.stoppuhr.Ansicht.bestenliste.value = "" }
+                    ) else Column(
                         Modifier.fillMaxSize().padding(vertical = 24.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
@@ -241,6 +259,23 @@ fun DammZeitApp() {
                         }
                     }
 
+                    // --- Umschalter Timer / Stoppuhr ---
+                    Row(
+                        Modifier.align(Alignment.TopStart).padding(28.dp)
+                            .shadow(3.dp, androidx.compose.foundation.shape.RoundedCornerShape(50))
+                            .clip(androidx.compose.foundation.shape.RoundedCornerShape(50)).background(Karte).padding(8.dp)
+                    ) {
+                        for ((name, stopp) in listOf("Timer" to false, "Stoppuhr" to true)) {
+                            val an = stoppuhrModus == stopp
+                            Box(
+                                Modifier.clip(androidx.compose.foundation.shape.RoundedCornerShape(50))
+                                    .background(if (an) Text1 else Color.Transparent)
+                                    .clickable { de.oejendorferdamm.dammzeit.stoppuhr.Ansicht.stoppuhr.value = stopp }
+                                    .padding(horizontal = 34.dp, vertical = 16.dp)
+                            ) { Text(name, color = if (an) Color.White else Text1, fontSize = 28.sp, fontWeight = FontWeight.SemiBold) }
+                        }
+                    }
+
                     // --- Das Zahnrad ---
                     if (!menueOffen) {
                         Box(Modifier.align(Alignment.TopEnd).padding(28.dp)) {
@@ -273,6 +308,19 @@ fun DammZeitApp() {
                         onSchliessen = { menueOffen = false },
                         modifier = Modifier.width(760.dp).fillMaxHeight()
                     )
+                }
+            }
+        }
+        VorbildRaster(faktor = 1f) {
+            if (speichernOffen) SpeichernDialog(onAbbrechen = { speichernOffen = false }) { b, _ ->
+                speichernOffen = false
+                de.oejendorferdamm.dammzeit.stoppuhr.Ansicht.neu.value = b.id
+                de.oejendorferdamm.dammzeit.stoppuhr.Ansicht.bestenliste.value = b.challenge
+            }
+            bestenliste?.let { c ->
+                Bestenliste(c.ifEmpty { null }, neuerEintrag) {
+                    de.oejendorferdamm.dammzeit.stoppuhr.Ansicht.bestenliste.value = null
+                    de.oejendorferdamm.dammzeit.stoppuhr.Ansicht.neu.value = null
                 }
             }
         }

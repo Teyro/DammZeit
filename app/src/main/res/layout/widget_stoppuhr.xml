@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/stoppuhr_karte"
+    android:padding="10dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:importantForAccessibility="no"
+                android:src="@drawable/ic_w_stoppuhr" />
+
+            <TextView
+                android:id="@+id/stopp_titel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="6dp"
+                android:text="Stoppuhr"
+                android:textColor="#FF5B5F66"
+                android:textSize="14sp" />
+        </LinearLayout>
+
+        <Chronometer
+            android:id="@+id/stopp_zeit"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="sans-serif-medium"
+            android:textColor="#FF1F2124"
+            android:textSize="44sp" />
+
+        <TextView
+            android:id="@+id/stopp_runden"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="#FF5B5F66"
+            android:textSize="14sp" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:id="@+id/stopp_zurueck"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:background="@drawable/widget_knopf_hell"
+                android:contentDescription="Zurücksetzen"
+                android:padding="11dp"
+                android:src="@drawable/ic_w_zurueck" />
+
+            <ImageView
+                android:id="@+id/stopp_startstopp"
+                android:layout_width="58dp"
+                android:layout_height="58dp"
+                android:layout_marginStart="10dp"
+                android:background="@drawable/widget_knopf_start"
+                android:contentDescription="Start oder Stopp"
+                android:padding="15dp"
+                android:src="@drawable/ic_w_start" />
+
+            <ImageView
+                android:id="@+id/stopp_runde"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:layout_marginStart="10dp"
+                android:background="@drawable/widget_knopf_hell"
+                android:contentDescription="Runde"
+                android:padding="11dp"
+                android:src="@drawable/ic_w_runde" />
+
+            <ImageView
+                android:id="@+id/stopp_speichern"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:layout_marginStart="10dp"
+                android:background="@drawable/widget_knopf_hell"
+                android:contentDescription="Zeit speichern"
+                android:padding="11dp"
+                android:src="@drawable/ic_w_speichern" />
+        </LinearLayout>
+    </LinearLayout>
+</FrameLayout>

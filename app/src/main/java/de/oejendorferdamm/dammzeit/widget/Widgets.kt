@@ -55,6 +55,11 @@ class WidgetAktionEmpfaenger : BroadcastReceiver() {
         Speicher.init(context)
         when (intent.action) {
             AKTION_ZURUECKSETZEN -> TimerSteuerung.zuruecksetzen(context)
+            // Zahl am Rand angetippt: Zeit einstellen (und je nach Einstellung gleich starten)
+            AKTION_ZEIT -> {
+                val ms = intent.getLongExtra(EXTRA_MS, 0L)
+                if (ms > 0) TimerSteuerung.setzeDauer(context, ms, starten = Speicher.einstellungen.value.sofortStarten)
+            }
             // Uhr antippen und Start/Stopp-Knopf: wie der Startknopf in der App.
             else -> TimerSteuerung.antippen(context)
         }
@@ -63,6 +68,8 @@ class WidgetAktionEmpfaenger : BroadcastReceiver() {
     companion object {
         const val AKTION_ANTIPPEN = "de.oejendorferdamm.dammzeit.WIDGET_ANTIPPEN"
         const val AKTION_ZURUECKSETZEN = "de.oejendorferdamm.dammzeit.WIDGET_ZURUECKSETZEN"
+        const val AKTION_ZEIT = "de.oejendorferdamm.dammzeit.WIDGET_ZEIT"
+        const val EXTRA_MS = "ms"
     }
 }
 
@@ -150,6 +157,44 @@ object WidgetAktualisierer {
         views.setViewVisibility(R.id.widget_zuruecksetzen, if (frisch) View.INVISIBLE else View.VISIBLE)
 
         val antippen = aktion(context, WidgetAktionEmpfaenger.AKTION_ANTIPPEN, 0)
+        // Tippflächen: Mitte = Start/Pause, Rand = Zeit der nächstliegenden Zahl
+        val schritte = 12
+        val imUhrzeigersinn = e.laufrichtung == de.oejendorferdamm.dammzeit.model.Laufrichtung.IM_UHRZEIGERSINN
+        for (zr in 0 until RASTER) for (zs in 0 until RASTER) {
+            val id = zellenIds(context)[zr * RASTER + zs]
+            if (id == 0) continue
+            val u = (zs + 0.5f) / RASTER - 0.5f
+            val w = (zr + 0.5f) / RASTER - 0.5f
+            if (kotlin.math.hypot(u, w) < 0.26f) {
+                views.setOnClickPendingIntent(id, antippen)
+                continue
+            }
+            // Winkel ab 12 Uhr im Uhrzeigersinn, dann auf die nächste Zahl runden
+            var grad = Math.toDegrees(kotlin.math.atan2(u.toDouble(), (-w).toDouble()))
+            if (grad < 0) grad += 360.0
+            if (!imUhrzeigersinn) grad = (360.0 - grad) % 360.0
+            var stufe = Math.round(grad / 360.0 * schritte).toInt() % schritte
+            if (stufe == 0) stufe = schritte // die "0" oben = volle Runde
+            val ms = e.skalaMinuten * 60_000L * stufe / schritte
+            views.setOnClickPendingIntent(
+                id,
+                PendingIntent.getBroadcast(
+                    context, 100 + zr * RASTER + zs,
+                    Intent(context, WidgetAktionEmpfaenger::class.java).setAction(WidgetAktionEmpfaenger.AKTION_ZEIT).putExtra(WidgetAktionEmpfaenger.EXTRA_MS, ms),
+                    PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+                )
+            )
+        }
+        // Startknopf in der Farbe der Zeitscheibe
+        views.setInt(
+            R.id.widget_startstopp, "setBackgroundResource",
+            when (e.farbe) {
+                de.oejendorferdamm.dammzeit.model.FarbModus.PETROL -> R.drawable.widget_knopf_start_petrol
+                de.oejendorferdamm.dammzeit.model.FarbModus.AMPEL -> R.drawable.widget_knopf_start_gruen
+                de.oejendorferdamm.dammzeit.model.FarbModus.EIGENE -> R.drawable.widget_knopf_start_dunkel
+                else -> R.drawable.widget_knopf_start_rot
+            }
+        )
         views.setOnClickPendingIntent(R.id.widget_zifferblatt, antippen)
         views.setOnClickPendingIntent(R.id.widget_rest_rahmen, antippen)
         views.setOnClickPendingIntent(R.id.widget_startstopp, antippen)
@@ -164,6 +209,14 @@ object WidgetAktualisierer {
         )
         return views
     }
+
+    private const val RASTER = 10
+    @Volatile private var ids: IntArray? = null
+
+    /** Ids der Tippflächen z_<zeile>_<spalte> (einmal nachschlagen). */
+    private fun zellenIds(context: Context): IntArray = ids ?: IntArray(RASTER * RASTER) { i ->
+        context.resources.getIdentifier("z_${i / RASTER}_${i % RASTER}", "id", context.packageName)
+    }.also { ids = it }
 
     private fun aktion(context: Context, aktion: String, code: Int): PendingIntent = PendingIntent.getBroadcast(
         context, code, Intent(context, WidgetAktionEmpfaenger::class.java).setAction(aktion),

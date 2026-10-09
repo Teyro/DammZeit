@@ -15,6 +15,7 @@ class WidgetTestActivity : Activity() {
     private val handler = Handler(Looper.getMainLooper())
     private lateinit var klein: FrameLayout
     private lateinit var gross: FrameLayout
+    private lateinit var stoppuhr: FrameLayout
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -22,11 +23,14 @@ class WidgetTestActivity : Activity() {
         val d = resources.displayMetrics.density
         klein = FrameLayout(this)
         gross = FrameLayout(this)
+        stoppuhr = FrameLayout(this)
+        de.oejendorferdamm.dammzeit.stoppuhr.StoppuhrSpeicher.init(this)
         val zeile = LinearLayout(this).apply {
             gravity = Gravity.CENTER
             setBackgroundColor(0xFF3A6EA5.toInt())
             addView(klein, LinearLayout.LayoutParams((260 * d).toInt(), (260 * d).toInt()).apply { rightMargin = (60 * d).toInt() })
             addView(gross, LinearLayout.LayoutParams((460 * d).toInt(), (460 * d).toInt()))
+            addView(stoppuhr, LinearLayout.LayoutParams((400 * d).toInt(), (220 * d).toInt()).apply { leftMargin = (60 * d).toInt() })
         }
         setContentView(zeile)
     }
@@ -36,6 +40,10 @@ class WidgetTestActivity : Activity() {
             // Wie der Startbildschirm: vorhandene Ansicht nur aktualisieren (reapply), nicht neu aufbauen.
             zeige(klein, WidgetAktualisierer.baue(this@WidgetTestActivity, gross = false, groesse(260)))
             zeige(gross, WidgetAktualisierer.baue(this@WidgetTestActivity, gross = true, groesse(460)))
+            zeige(stoppuhr, de.oejendorferdamm.dammzeit.stoppuhr.StoppuhrWidget.baue(this@WidgetTestActivity, Bundle().apply {
+                putInt(android.appwidget.AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 400)
+                putInt(android.appwidget.AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 220)
+            }))
             handler.postDelayed(this, 2000)
         }
     }

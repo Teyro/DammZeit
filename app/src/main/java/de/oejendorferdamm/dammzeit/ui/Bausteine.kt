@@ -262,7 +262,7 @@ fun FarbPunkt(farbe: Color, modifier: Modifier = Modifier) {
 }
 
 /** Pfeil-/Symbolzeichnungen für Knöpfe, einfach und scharf in jeder Größe. */
-enum class Symbol { START, PAUSE, ZURUECK, PLUS, MINUS, ZURUECK_PFEIL, ZAHNRAD, STIFT, LAUTSPRECHER, STOPP, SCHLIESSEN }
+enum class Symbol { START, PAUSE, ZURUECK, PLUS, MINUS, ZURUECK_PFEIL, ZAHNRAD, STIFT, LAUTSPRECHER, STOPP, SCHLIESSEN, FAHNE, DISKETTE, POKAL, LOESCHEN }
 
 @Composable
 fun SymbolBild(symbol: Symbol, farbe: Color, modifier: Modifier = Modifier) {
@@ -320,6 +320,42 @@ fun SymbolBild(symbol: Symbol, farbe: Color, modifier: Modifier = Modifier) {
             Symbol.STIFT -> {
                 drawLine(farbe, p(0.25f, 0.75f), p(0.72f, 0.28f), linie * 1.6f, androidx.compose.ui.graphics.StrokeCap.Round)
                 drawLine(farbe, p(0.18f, 0.82f), p(0.25f, 0.75f), linie, androidx.compose.ui.graphics.StrokeCap.Round)
+            }
+            Symbol.FAHNE -> {
+                drawLine(farbe, p(0.28f, 0.15f), p(0.28f, 0.88f), linie, androidx.compose.ui.graphics.StrokeCap.Round)
+                drawPath(androidx.compose.ui.graphics.Path().apply {
+                    moveTo(p(0.32f, 0.16f).x, p(0.32f, 0.16f).y); lineTo(p(0.82f, 0.16f).x, p(0.82f, 0.16f).y)
+                    lineTo(p(0.7f, 0.34f).x, p(0.7f, 0.34f).y); lineTo(p(0.82f, 0.52f).x, p(0.82f, 0.52f).y); lineTo(p(0.32f, 0.52f).x, p(0.32f, 0.52f).y); close()
+                }, farbe)
+            }
+            Symbol.DISKETTE -> {
+                val st = androidx.compose.ui.graphics.drawscope.Stroke(linie * 0.85f, join = androidx.compose.ui.graphics.StrokeJoin.Round)
+                drawPath(androidx.compose.ui.graphics.Path().apply {
+                    moveTo(p(0.18f, 0.16f).x, p(0.18f, 0.16f).y); lineTo(p(0.7f, 0.16f).x, p(0.7f, 0.16f).y); lineTo(p(0.84f, 0.3f).x, p(0.84f, 0.3f).y)
+                    lineTo(p(0.84f, 0.84f).x, p(0.84f, 0.84f).y); lineTo(p(0.18f, 0.84f).x, p(0.18f, 0.84f).y); close()
+                }, farbe, style = st)
+                drawRect(farbe, topLeft = p(0.3f, 0.16f), size = androidx.compose.ui.geometry.Size(s * 0.34f, s * 0.2f))
+                drawRect(farbe, topLeft = p(0.3f, 0.56f), size = androidx.compose.ui.geometry.Size(s * 0.42f, s * 0.28f), style = st)
+            }
+            Symbol.POKAL -> {
+                drawPath(androidx.compose.ui.graphics.Path().apply {
+                    moveTo(p(0.28f, 0.15f).x, p(0.28f, 0.15f).y); lineTo(p(0.72f, 0.15f).x, p(0.72f, 0.15f).y)
+                    cubicTo(p(0.72f, 0.5f).x, p(0.72f, 0.5f).y, p(0.6f, 0.58f).x, p(0.6f, 0.58f).y, p(0.5f, 0.58f).x, p(0.5f, 0.58f).y)
+                    cubicTo(p(0.4f, 0.58f).x, p(0.4f, 0.58f).y, p(0.28f, 0.5f).x, p(0.28f, 0.5f).y, p(0.28f, 0.15f).x, p(0.28f, 0.15f).y); close()
+                }, farbe)
+                val st = androidx.compose.ui.graphics.drawscope.Stroke(linie * 0.7f)
+                drawArc(farbe, 90f, 180f, false, topLeft = p(0.14f, 0.2f), size = androidx.compose.ui.geometry.Size(s * 0.2f, s * 0.22f), style = st)
+                drawArc(farbe, -90f, 180f, false, topLeft = p(0.66f, 0.2f), size = androidx.compose.ui.geometry.Size(s * 0.2f, s * 0.22f), style = st)
+                drawRect(farbe, topLeft = p(0.45f, 0.56f), size = androidx.compose.ui.geometry.Size(s * 0.1f, s * 0.16f))
+                drawRect(farbe, topLeft = p(0.3f, 0.72f), size = androidx.compose.ui.geometry.Size(s * 0.4f, s * 0.12f))
+            }
+            Symbol.LOESCHEN -> {
+                drawLine(farbe, p(0.2f, 0.26f), p(0.8f, 0.26f), linie, androidx.compose.ui.graphics.StrokeCap.Round)
+                drawPath(androidx.compose.ui.graphics.Path().apply {
+                    moveTo(p(0.27f, 0.3f).x, p(0.27f, 0.3f).y); lineTo(p(0.32f, 0.84f).x, p(0.32f, 0.84f).y)
+                    lineTo(p(0.68f, 0.84f).x, p(0.68f, 0.84f).y); lineTo(p(0.73f, 0.3f).x, p(0.73f, 0.3f).y)
+                }, farbe, style = androidx.compose.ui.graphics.drawscope.Stroke(linie * 0.85f))
+                drawLine(farbe, p(0.4f, 0.14f), p(0.6f, 0.14f), linie, androidx.compose.ui.graphics.StrokeCap.Round)
             }
             Symbol.LAUTSPRECHER -> {
                 drawPath(androidx.compose.ui.graphics.Path().apply {

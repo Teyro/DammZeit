@@ -20,6 +20,11 @@ import de.oejendorferdamm.dammzeit.widget.WidgetAktualisierer
 
 /** Die Uhr im Vollbild – auf dem Board sollen keine Systemleisten ablenken. */
 class MainActivity : ComponentActivity() {
+    companion object {
+        const val EXTRA_STOPPUHR = "stoppuhr"
+        const val EXTRA_BESTENLISTE = "bestenliste"
+    }
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -36,6 +41,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        setIntent(intent)
         verarbeite()
     }
 
@@ -54,6 +60,12 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun verarbeite() {
+        // Vom Stoppuhr-Widget: direkt Stoppuhr bzw. Bestenliste zeigen
+        if (intent?.getBooleanExtra(EXTRA_STOPPUHR, false) == true) de.oejendorferdamm.dammzeit.stoppuhr.Ansicht.stoppuhr.value = true
+        intent?.getStringExtra(EXTRA_BESTENLISTE)?.let {
+            de.oejendorferdamm.dammzeit.stoppuhr.Ansicht.stoppuhr.value = true
+            de.oejendorferdamm.dammzeit.stoppuhr.Ansicht.bestenliste.value = it
+        }
         // Klingelt die Uhr, die App auch über dem Sperrbildschirm zeigen.
         if (KlingelDienst.klingelt.value != null) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {

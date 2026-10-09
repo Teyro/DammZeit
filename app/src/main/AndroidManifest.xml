@@ -74,6 +74,23 @@
             <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_gross_info" />
         </receiver>
 
+        <receiver android:name=".stoppuhr.StoppuhrWidgetProvider" android:exported="true" android:label="DammZeit Stoppuhr">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_stoppuhr_info" />
+        </receiver>
+        <receiver android:name=".stoppuhr.StoppuhrAktion" android:exported="false" />
+
+        <activity
+            android:name=".stoppuhr.SpeichernActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:screenOrientation="sensorLandscape"
+            android:taskAffinity="de.oejendorferdamm.dammzeit.speichern"
+            android:theme="@style/Theme.DammZeit.Auswahl"
+            android:windowSoftInputMode="adjustResize" />
+
         <receiver android:name=".widget.WidgetAktionEmpfaenger" android:exported="false" />
         <receiver android:name=".widget.WidgetTaktEmpfaenger" android:exported="false" />
 

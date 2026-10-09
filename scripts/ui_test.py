@@ -221,7 +221,7 @@ def main():
     if len(felder) > 1:
         tap(*mitte(felder[1]))
         adb("shell", "input", "text", "Hampelmann")
-    adb("shell", "input", "keyevent", "111")  # Tastatur zu
+    # kein ESC hier: das schlösse das ganze Fenster
     time.sleep(1)
     screenshot("20_speichern_dialog.png")
     tippe("Speichern")

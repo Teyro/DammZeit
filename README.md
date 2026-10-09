@@ -22,7 +22,12 @@ nicht für Handys.
   Klingelton (Gong, Glocke, Klangschale, Piepen, Wecker, Gerätewecker, still – mit
   Probehören), Klingeldauer bis „bis zum Antippen“, Lautstärke, sofort starten,
   Bildschirm anlassen
-- **Widgets 2 × 2 und 4 × 4**: die Uhr wie in der App mit großen Zahlen (auch von hinten im Raum lesbar), die Restzeit läuft sekundengenau auf der Scheibe mit; unten links Zurücksetzen, unten rechts Start/Pause/Stopp, oben rechts „Zeit einstellen“ (Auswahlfenster mit 1–60 Minuten oder eigener Zeit)
+- **Widgets 2 × 2 und 4 × 4**: die Uhr wie in der App mit großen Zahlen (auch von hinten im Raum lesbar), die Restzeit läuft sekundengenau auf der Scheibe mit; unten links Zurücksetzen, unten rechts Start/Pause/Stopp, oben rechts „Zeit einstellen“ (Auswahlfenster mit 1–60 Minuten oder eigener Zeit); eine Zahl am Rand antippen stellt die Uhr direkt auf diese Zeit, die Mitte startet und hält an
+- **Stoppuhr** (oben links von Timer auf Stoppuhr umschalten oder als eigenes Widget): Start/Stopp,
+  Runden mit Fahne (schnellste grün, langsamste rot), Zeit mit Name und Challenge auf der Diskette
+  speichern
+- **Bestenliste** für Challenges: Siegertreppchen mit Krone, Gold, Silber und Bronze, darunter
+  alle weiteren Plätze; Einträge lassen sich antippen und löschen
 - **Pünktlich auch im Hintergrund** und nach einem Neustart des Boards
 - **Automatische Updates** direkt aus den GitHub-Releases, mit Signaturprüfung
 - Die Oberfläche wird proportional zur Bildschirmbreite gezeichnet – auf einem 4K-Board

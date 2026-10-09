@@ -89,7 +89,7 @@
             android:screenOrientation="sensorLandscape"
             android:taskAffinity="de.oejendorferdamm.dammzeit.speichern"
             android:theme="@style/Theme.DammZeit.Auswahl"
-            android:windowSoftInputMode="adjustResize" />
+            android:windowSoftInputMode="adjustPan" />
 
         <receiver android:name=".widget.WidgetAktionEmpfaenger" android:exported="false" />
         <receiver android:name=".widget.WidgetTaktEmpfaenger" android:exported="false" />

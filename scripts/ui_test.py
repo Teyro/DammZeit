@@ -172,10 +172,16 @@ def main():
     adb("shell", "am", "start", "-n", f"{PAKET}/.WidgetTestActivity")
     time.sleep(3)
     screenshot("13_widgets.png")
+    # Solange nichts läuft, Positionen merken – bei laufender Uhr wird uiautomator nie „ruhig“
+    uhren = alle_grenzen("DammZeit-Uhr, antippen zum Starten oder Anhalten")
+    s = knoten("Start oder Stopp")
+    w_zurueck = knoten("Zurücksetzen")
+    w_einstellen = knoten("Zeit einstellen")
     tippe("Start oder Pause")
     time.sleep(4)
     screenshot("14_widgets_laeuft.png")
-    tippe("Zeit einstellen")
+    if w_einstellen:
+        tap(*mitte(w_einstellen))
     time.sleep(3)
     screenshot("15_zeit_einstellen.png")
     tippe("5 Minuten")
@@ -183,13 +189,10 @@ def main():
     adb("shell", "am", "start", "-n", f"{PAKET}/.WidgetTestActivity")
     time.sleep(3)
     screenshot("16_widgets_5_minuten.png")
-    tippe("Zurücksetzen")
+    if w_zurueck:
+        tap(*mitte(w_zurueck))
     time.sleep(2)
     screenshot("17_widgets_zurueckgesetzt.png")
-
-    # Solange nichts läuft, Positionen merken – bei laufender Uhr wird uiautomator nie „ruhig“
-    uhren = alle_grenzen("DammZeit-Uhr, antippen zum Starten oder Anhalten")
-    s = knoten("Start oder Stopp")
 
     # Stoppuhr-Widget: starten, zwei Runden, stoppen, speichern
     if s:
@@ -272,139 +275,6 @@ def main():
         adb("shell", "am", "start", "-n", f"{PAKET}/.WidgetTestActivity")
         time.sleep(3)
         screenshot("24_widget_zahl_angetippt.png")
-
-    if not laeuft():
-        print("FEHLER: App läuft nach dem Start nicht", file=sys.stderr)
-        sys.exit(1)
-    screenshot("01_start.png")
-
-    stelle_uhr(14 / 60)  # 14 Minuten, startet sofort
-    time.sleep(3)
-    screenshot("02_14_minuten_laeuft.png")
-    tippe("Pause")  # Startknopf: Pause
-    time.sleep(1.5)
-    screenshot("03_pausiert.png")
-    tippe("Weiter")
-    time.sleep(1)
-
-    tippe("Einstellungen")
-    time.sleep(2)
-    screenshot("04_einstellungen.png")
-    tippe("Dunkel")
-    time.sleep(1)
-    tippe("Ampel: grün, gelb, rot")
-    time.sleep(1)
-    screenshot("05_dunkel_ampel.png")
-    scrolle_zu("5 Min")  # 5-Minuten-Zifferblatt
-    time.sleep(1)
-    screenshot("06_einstellungen_zifferblatt.png")
-    tippe("Einstellungen schließen")
-    time.sleep(2)
-
-    stelle_uhr(0.06)  # 15 Sekunden auf dem 5-Minuten-Zifferblatt
-    time.sleep(2)
-    screenshot("07_kurz_laeuft.png")
-    time.sleep(18)
-    screenshot("08_zeit_ist_um.png")
-    tippe("Uhr")  # Ton stoppen
-    time.sleep(2)
-    screenshot("09_gestoppt.png")
-
-    tippe("Start")
-    time.sleep(2)
-    screenshot("10_start_knopf.png")
-    tippe("Pause")
-    time.sleep(1)
-    tippe("Zurücksetzen")
-    time.sleep(0.25)
-    screenshot("11_zuruecksetzen_gleitet.png")
-    time.sleep(2)
-    screenshot("12_zurueckgesetzt.png")
-
-    # Widgets (Vorschau-Seite aus dem Test-Build, echte RemoteViews mit echten Knöpfen)
-    adb("shell", "am", "start", "-n", f"{PAKET}/.WidgetTestActivity")
-    time.sleep(3)
-    screenshot("13_widgets.png")
-    tippe("Start oder Pause")
-    time.sleep(4)
-    screenshot("14_widgets_laeuft.png")
-    tippe("Zeit einstellen")
-    time.sleep(3)
-    screenshot("15_zeit_einstellen.png")
-    tippe("5 Minuten")
-    time.sleep(3)
-    adb("shell", "am", "start", "-n", f"{PAKET}/.WidgetTestActivity")
-    time.sleep(3)
-    screenshot("16_widgets_5_minuten.png")
-    tippe("Zurücksetzen")
-    time.sleep(2)
-    screenshot("17_widgets_zurueckgesetzt.png")
-
-    # Timer-Widget: auf die Zahl rechts tippen (bei Uhrzeigersinn = 15 auf dem 60er-Zifferblatt)
-    z = alle_grenzen("DammZeit-Uhr, antippen zum Starten oder Anhalten")
-    if len(z) >= 2:
-        g = max(z, key=lambda r: (r[2] - r[0]))
-        cx, cy, b = (g[0] + g[2]) // 2, (g[1] + g[3]) // 2, (g[2] - g[0])
-        adb("shell", "input", "tap", str(cx + int(b * 0.41)), str(cy))
-        time.sleep(3)
-        adb("shell", "am", "start", "-n", f"{PAKET}/.WidgetTestActivity")
-        time.sleep(3)
-        screenshot("18_widget_zahl_angetippt.png")
-
-    # Stoppuhr-Widget: starten, Runde, stoppen, speichern
-    tippe("Start oder Stopp")
-    time.sleep(3)
-    tippe("Runde")
-    time.sleep(2)
-    screenshot("19_stoppuhr_widget_laeuft.png")
-    tippe("Start oder Stopp")
-    time.sleep(2)
-    tippe("Zeit speichern")
-    time.sleep(3)
-    felder = alle_grenzen_klasse("android.widget.EditText")
-    if felder:
-        f = felder[0]
-        adb("shell", "input", "tap", str((f[0] + f[2]) // 2), str((f[1] + f[3]) // 2))
-        adb("shell", "input", "text", "Lea")
-    if len(felder) > 1:
-        f = felder[1]
-        adb("shell", "input", "tap", str((f[0] + f[2]) // 2), str((f[1] + f[3]) // 2))
-        adb("shell", "input", "text", "Hampelmann")
-    adb("shell", "input", "keyevent", "111")  # Tastatur zu
-    time.sleep(1)
-    screenshot("20_speichern_dialog.png")
-    tippe("Speichern")
-    time.sleep(2)
-    screenshot("21_platz.png")
-
-    # Stoppuhr in der App: drei weitere Kinder für ein volles Treppchen
-    adb("shell", "am", "start", "-n", f"{PAKET}/.MainActivity")
-    time.sleep(3)
-    tippe("Stoppuhr")
-    time.sleep(2)
-    for name, sekunden in (("Ben", 2), ("Mia", 5), ("Tom", 3)):
-        tippe("Zurücksetzen")
-        time.sleep(1)
-        tippe("Start")
-        time.sleep(sekunden / 2)
-        tippe("Runde")
-        time.sleep(sekunden / 2)
-        if name == "Mia":
-            screenshot("22_stoppuhr_app_laeuft.png")
-        tippe("Stopp")
-        time.sleep(1)
-        tippe("Zeit speichern")
-        time.sleep(2)
-        felder = alle_grenzen_klasse("android.widget.EditText")
-        if felder:
-            f = felder[0]
-            adb("shell", "input", "tap", str((f[0] + f[2]) // 2), str((f[1] + f[3]) // 2))
-            adb("shell", "input", "text", name)
-        adb("shell", "input", "keyevent", "111")
-        time.sleep(1)
-        tippe("Speichern")
-        time.sleep(3)
-    screenshot("23_bestenliste.png")
 
     if not laeuft():
         print("FEHLER: App ist abgestürzt", file=sys.stderr)

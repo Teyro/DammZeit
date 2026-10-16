@@ -187,10 +187,10 @@ fun EinstellungenPanel(
                 }
             }
             Spacer(Modifier.height(16.dp))
-            Text("Klingeldauer", color = Text2, fontSize = 17.sp)
+            Text("Klingeldauer (die letzten 3 Sekunden klingt der Ton sanft aus)", color = Text2, fontSize = 17.sp)
             Spacer(Modifier.height(8.dp))
             FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                listOf(5 to "5 Sek", 10 to "10 Sek", 30 to "30 Sek", 60 to "1 Min", 120 to "2 Min", 0 to "Bis zum Antippen").forEach { (s, text) ->
+                listOf(3 to "3 Sek", 5 to "5 Sek", 10 to "10 Sek", 30 to "30 Sek", 60 to "1 Min", 120 to "2 Min", 0 to "Bis zum Antippen").forEach { (s, text) ->
                     Auswahl(text, einstellungen.klingelSekunden == s, { aendere { it.copy(klingelSekunden = s) } }, schrift = 18.sp)
                 }
             }

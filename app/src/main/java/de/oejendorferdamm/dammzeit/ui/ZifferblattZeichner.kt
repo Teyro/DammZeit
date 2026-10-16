@@ -95,7 +95,7 @@ object ZifferblattZeichner {
         if (seite <= 0f) return
         val cx = breite / 2f
         val cy = hoehe / 2f
-        val radius = seite * (if (!mitZahlen) 0.40f else if (grosseZahlen) 0.29f else 0.31f)
+        val radius = seite * (if (!mitZahlen) 0.40f else if (grosseZahlen) 0.275f else 0.31f)
         val dunkel = hintergrund == Hintergrund.DUNKEL || hintergrund == Hintergrund.SCHWARZ
 
         val schluessel = "$breite/$hoehe/$radius/${hintergrund.name}"
@@ -181,7 +181,8 @@ object ZifferblattZeichner {
             val lang = i % 5 == 0
             val winkel = Math.toRadians(-90.0 + d * i * 6.0)
             val innen = radius + seite * 0.018f
-            val aussen = innen + seite * (if (lang) 0.045f else 0.025f)
+            // Große Zahlen: kürzere Striche, damit die Zahlen Platz haben
+            val aussen = innen + seite * (if (grosseZahlen) (if (lang) 0.032f else 0.018f) else if (lang) 0.045f else 0.025f)
             strich.strokeWidth = seite * (if (lang) 0.0075f else 0.004f)
             strich.color = if (lang) s.strichLang else s.strichKurz
             canvas.drawLine(
@@ -195,9 +196,9 @@ object ZifferblattZeichner {
             val schritt = beschriftungsSchritt(skalaMinuten)
             val anzahl = skalaMinuten / schritt
             schrift.color = s.schrift
-            schrift.textSize = seite * (if (grosseZahlen) 0.088f else 0.068f)
+            schrift.textSize = seite * (if (grosseZahlen) 0.105f else 0.068f)
             schrift.typeface = if (grosseZahlen) FETT else NORMAL
-            val textRadius = radius + seite * (if (grosseZahlen) 0.125f else 0.118f)
+            val textRadius = radius + seite * (if (grosseZahlen) 0.128f else 0.118f)
             val mitteText = (schrift.descent() + schrift.ascent()) / 2f
             for (k in 0 until anzahl) {
                 val winkel = Math.toRadians(-90.0 + d * k * 360.0 / anzahl)

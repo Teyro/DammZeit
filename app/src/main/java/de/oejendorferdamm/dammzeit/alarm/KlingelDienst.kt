@@ -89,16 +89,26 @@ class KlingelDienst : Service() {
         _klingelt.value = id
         val neuerSpieler = spieler ?: TonSpieler(this).also { spieler = it }
         neuerSpieler.spiele(einstellungen.ton, wiederholen = true, lautstaerke = einstellungen.lautstaerke)
-        handler.removeCallbacks(ende)
+        handler.removeCallbacksAndMessages(null)
         // 0 = klingelt, bis jemand auf die Uhr tippt (höchstens 10 Minuten).
         val sekunden = if (einstellungen.klingelSekunden <= 0) 600 else einstellungen.klingelSekunden
         handler.postDelayed(ende, sekunden * 1000L)
+        // Feste Klingeldauer: in den letzten 3 Sekunden sanft ausklingen statt hart abzubrechen
+        if (einstellungen.klingelSekunden > 0) {
+            val fade = minOf(AUSKLINGEN_MS, sekunden * 1000L)
+            val start = sekunden * 1000L - fade
+            for (i in 1..AUSKLINGEN_SCHRITTE) {
+                val faktor = 1f - i.toFloat() / AUSKLINGEN_SCHRITTE
+                // weicher Verlauf: erst langsam, dann schneller leiser
+                handler.postDelayed({ spieler?.daempfe(faktor * faktor) }, start + fade * i / AUSKLINGEN_SCHRITTE)
+            }
+        }
         return START_NOT_STICKY
     }
 
 
     private fun beenden() {
-        handler.removeCallbacks(ende)
+        handler.removeCallbacksAndMessages(null)
         spieler?.stopp()
         spieler = null
         _klingelt.value = null
@@ -107,7 +117,7 @@ class KlingelDienst : Service() {
     }
 
     override fun onDestroy() {
-        handler.removeCallbacks(ende)
+        handler.removeCallbacksAndMessages(null)
         spieler?.stopp()
         _klingelt.value = null
         super.onDestroy()
@@ -116,6 +126,8 @@ class KlingelDienst : Service() {
     companion object {
         private const val KANAL = "klingeln"
         private const val NOTIFICATION_ID = 42
+        private const val AUSKLINGEN_MS = 3_000L
+        private const val AUSKLINGEN_SCHRITTE = 30
         const val AKTION_STOPP = "de.oejendorferdamm.dammzeit.STOPP"
 
         private val _klingelt = MutableStateFlow<Long?>(null)

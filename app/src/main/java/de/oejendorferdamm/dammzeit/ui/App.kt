@@ -86,6 +86,7 @@ fun DammZeitApp() {
     val klingelt by KlingelDienst.klingelt.collectAsState()
     var menueOffen by remember { mutableStateOf(false) }
     val stoppuhrModus by de.oejendorferdamm.dammzeit.stoppuhr.Ansicht.stoppuhr.collectAsState()
+    val sanduhrModus by de.oejendorferdamm.dammzeit.stoppuhr.Ansicht.sanduhr.collectAsState()
     val bestenliste by de.oejendorferdamm.dammzeit.stoppuhr.Ansicht.bestenliste.collectAsState()
     val neuerEintrag by de.oejendorferdamm.dammzeit.stoppuhr.Ansicht.neu.collectAsState()
     var speichernOffen by remember { mutableStateOf(false) }
@@ -182,7 +183,7 @@ fun DammZeitApp() {
                         schrift, Modifier.fillMaxSize(),
                         onSpeichern = { speichernOffen = true },
                         onBestenliste = { de.oejendorferdamm.dammzeit.stoppuhr.Ansicht.bestenliste.value = "" }
-                    ) else Column(
+                    ) else if (sanduhrModus) SanduhrAnsicht(schrift, Modifier.fillMaxSize()) else Column(
                         Modifier.fillMaxSize().padding(vertical = 24.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
@@ -265,12 +266,15 @@ fun DammZeitApp() {
                             .shadow(3.dp, androidx.compose.foundation.shape.RoundedCornerShape(50))
                             .clip(androidx.compose.foundation.shape.RoundedCornerShape(50)).background(Karte).padding(8.dp)
                     ) {
-                        for ((name, stopp) in listOf("Timer" to false, "Stoppuhr" to true)) {
-                            val an = stoppuhrModus == stopp
+                        for ((name, art) in listOf("Timer" to 0, "Sanduhr" to 1, "Stoppuhr" to 2)) {
+                            val an = when (art) { 2 -> stoppuhrModus; 1 -> !stoppuhrModus && sanduhrModus; else -> !stoppuhrModus && !sanduhrModus }
                             Box(
                                 Modifier.clip(androidx.compose.foundation.shape.RoundedCornerShape(50))
                                     .background(if (an) Text1 else Color.Transparent)
-                                    .clickable { de.oejendorferdamm.dammzeit.stoppuhr.Ansicht.stoppuhr.value = stopp }
+                                    .clickable {
+                                        de.oejendorferdamm.dammzeit.stoppuhr.Ansicht.stoppuhr.value = art == 2
+                                        if (art != 2) de.oejendorferdamm.dammzeit.stoppuhr.Ansicht.sanduhr.value = art == 1
+                                    }
                                     .padding(horizontal = 34.dp, vertical = 16.dp)
                             ) { Text(name, color = if (an) Color.White else Text1, fontSize = 28.sp, fontWeight = FontWeight.SemiBold) }
                         }

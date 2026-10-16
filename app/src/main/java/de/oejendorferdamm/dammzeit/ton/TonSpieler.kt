@@ -48,6 +48,14 @@ class TonSpieler(private val context: Context) {
 
     private var lautstaerke = 1f
 
+    /** Leiser stellen, ohne zu stoppen (0–1) – für das sanfte Ausklingen am Ende. */
+    @Synchronized
+    fun daempfe(faktor: Float) {
+        val f = faktor.coerceIn(0f, 1f)
+        try { spur?.setVolume(f) } catch (_: Exception) {}
+        try { geraeteTon?.setVolume(f, f) } catch (_: Exception) {}
+    }
+
     @Synchronized
     fun stopp() {
         spur?.let {

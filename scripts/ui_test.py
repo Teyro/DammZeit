@@ -276,6 +276,25 @@ def main():
         time.sleep(3)
         screenshot("24_widget_zahl_angetippt.png")
 
+    # Sanduhr: in der App umschalten, gelbe 3-Minuten-Sanduhr wählen (dreht sich und startet)
+    adb("shell", "am", "start", "-n", f"{PAKET}/.MainActivity")
+    time.sleep(3)
+    if tippe("Sanduhr"):
+        time.sleep(2)
+        screenshot("25_sanduhr.png")
+        if tippe("3 Minuten, Sand Gelb"):
+            time.sleep(1)
+            screenshot("26_sanduhr_dreht.png")
+            time.sleep(5)
+            screenshot("27_sanduhr_rieselt.png")
+        tippe("1 Minuten, Sand Rot")
+        time.sleep(35)
+        screenshot("28_sanduhr_halb.png")
+        tippe("Zurücksetzen")
+        time.sleep(2)
+        tippe("Timer")
+        time.sleep(1)
+
     if not laeuft():
         print("FEHLER: App ist abgestürzt", file=sys.stderr)
     with open("logcat.txt", "w") as f:

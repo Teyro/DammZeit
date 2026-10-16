@@ -293,7 +293,7 @@ fun DammZeitApp() {
                     }
 
                     // --- Bis zur Pause (Timer und Sanduhr) ---
-                    if (!laermModus && !stoppuhrModus) BisZurPauseKnopf(Modifier.align(Alignment.TopCenter).padding(top = 32.dp))
+                    if (!laermModus && !stoppuhrModus) BisZurPauseKnopf(Modifier.align(Alignment.BottomEnd).padding(28.dp))
 
                     // --- Favoriten, Ziffern, Zahnrad ---
                     if (!menueOffen) {

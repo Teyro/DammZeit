@@ -50,6 +50,8 @@ jobs:
           script: |
             adb install -r app/build/outputs/apk/debug/app-debug.apk
             if [ -n "${{ inputs.board }}" ]; then adb shell wm size "$(echo '${{ inputs.board }}' | cut -d@ -f1)"; adb shell wm density "$(echo '${{ inputs.board }}' | cut -d@ -f2)"; sleep 3; fi
+            # Android 8: der Emulator-Startbildschirm stürzt nach der Dichte-Änderung ab – Fehlerfenster wegdrücken
+            for i in 1 2 3; do adb shell dumpsys window | grep -q "Application Error" && adb shell input keyevent KEYCODE_BACK; sleep 2; done
             python3 scripts/ui_test.py
 
       - name: Screenshots und Logcat hochladen

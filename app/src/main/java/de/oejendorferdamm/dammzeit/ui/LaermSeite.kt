@@ -135,11 +135,12 @@ fun LaermAnsicht(schrift: Color, modifier: Modifier = Modifier) {
         }
         Spacer(Modifier.width(40.dp))
         // --- Pegel und Einstellungen ---
-        Column(Modifier.width(720.dp)) {
+        // Helle Karte: in jedem Erscheinungsbild (auch dunkel) gut lesbar
+        Column(Modifier.width(760.dp).clip(RoundedCornerShape(32.dp)).background(Karte).padding(36.dp)) {
             if (!erlaubt) {
-                Text("Die Lärmampel braucht das Mikrofon.", color = schrift, fontSize = 36.sp, fontWeight = FontWeight.Bold)
+                Text("Die Lärmampel braucht das Mikrofon.", color = Text1, fontSize = 36.sp, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.height(14.dp))
-                Text("Es wird nichts aufgenommen oder gespeichert – nur gemessen, wie laut es gerade ist.", color = schrift.copy(alpha = 0.75f), fontSize = 24.sp)
+                Text("Es wird nichts aufgenommen oder gespeichert – nur gemessen, wie laut es gerade ist.", color = Text2, fontSize = 24.sp)
                 Spacer(Modifier.height(24.dp))
                 GrosserKnopf("Mikrofon erlauben", Akzent, Color.White) { anfrage.launch(Manifest.permission.RECORD_AUDIO) }
                 return@Column
@@ -160,7 +161,7 @@ fun LaermAnsicht(schrift: Color, modifier: Modifier = Modifier) {
             Text(
                 (if (zuLaut > 0) "Seit dem Öffnen $zuLaut× zu laut. " else "") +
                     "Es wird nichts aufgenommen oder gespeichert – nur der Pegel gemessen.",
-                color = schrift.copy(alpha = 0.7f), fontSize = 20.sp
+                color = Text2, fontSize = 20.sp
             )
         }
     }

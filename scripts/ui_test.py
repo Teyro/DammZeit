@@ -295,6 +295,45 @@ def main():
         tippe("Timer")
         time.sleep(1)
 
+    # Neue Funktionen 2.3: Lärmampel, große Ziffern, Favoriten, Sanduhr-Widget
+    adb("shell", "pm", "grant", PAKET, "android.permission.RECORD_AUDIO")
+    adb("shell", "am", "start", "-n", f"{PAKET}/.MainActivity")
+    time.sleep(3)
+    if tippe("Lärm"):
+        time.sleep(4)
+        screenshot("30_laermampel.png")
+    tippe("Timer")
+    time.sleep(2)
+    screenshot("31_timer_bis_zur_pause.png")
+    if tippe("Große Ziffern zeigen"):
+        time.sleep(2)
+        screenshot("32_grosse_ziffern.png")
+        tippe("Zifferblatt zeigen")
+        time.sleep(1)
+    if tippe("Favoriten"):
+        time.sleep(2)
+        z = knoten("Name, z. B. Lesezeit")
+        if z:
+            tap(*mitte(z))
+            time.sleep(1.5)
+            adb("shell", "input", "text", "Lesezeit")
+            time.sleep(1)
+            adb("shell", "input", "keyevent", "111")
+            time.sleep(1)
+            tippe("Speichern")
+            time.sleep(2)
+        screenshot("33_favoriten.png")
+        if tippe("Favorit Lesezeit"):
+            time.sleep(3)
+            screenshot("34_favorit_gestartet.png")
+    tippe("Sanduhr")
+    time.sleep(2)
+    adb("shell", "am", "start", "-S", "-n", f"{PAKET}/.WidgetTestActivity")
+    time.sleep(4)
+    screenshot("35_widgets_mit_sanduhr.png")
+    adb("shell", "am", "start", "-n", f"{PAKET}/.MainActivity")
+    time.sleep(2)
+
     if not laeuft():
         print("FEHLER: App ist abgestürzt", file=sys.stderr)
     with open("logcat.txt", "w") as f:

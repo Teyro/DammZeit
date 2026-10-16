@@ -49,6 +49,19 @@ class WidgetGross : AppWidgetProvider() {
     }
 }
 
+/** Widget: die Sanduhr (gleicher Timer wie die Uhr). */
+class SanduhrWidget : AppWidgetProvider() {
+    override fun onUpdate(context: Context, manager: AppWidgetManager, ids: IntArray) {
+        Speicher.init(context)
+        WidgetAktualisierer.aktualisiereAlle(context)
+    }
+
+    override fun onAppWidgetOptionsChanged(context: Context, manager: AppWidgetManager, id: Int, optionen: Bundle?) {
+        Speicher.init(context)
+        WidgetAktualisierer.aktualisiereAlle(context)
+    }
+}
+
 /** Knöpfe und Antippen des Widgets. */
 class WidgetAktionEmpfaenger : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
@@ -93,12 +106,14 @@ object WidgetAktualisierer {
         val manager = AppWidgetManager.getInstance(context) ?: return
         val klein = manager.getAppWidgetIds(ComponentName(context, WidgetKlein::class.java))
         val gross = manager.getAppWidgetIds(ComponentName(context, WidgetGross::class.java))
-        if (klein.isEmpty() && gross.isEmpty()) {
+        val sand = manager.getAppWidgetIds(ComponentName(context, SanduhrWidget::class.java))
+        if (klein.isEmpty() && gross.isEmpty() && sand.isEmpty()) {
             takt(context, an = false)
             return
         }
         for (id in klein) manager.updateAppWidget(id, baue(context, gross = false, manager.getAppWidgetOptions(id)))
         for (id in gross) manager.updateAppWidget(id, baue(context, gross = true, manager.getAppWidgetOptions(id)))
+        for (id in sand) manager.updateAppWidget(id, baueSanduhr(context, manager.getAppWidgetOptions(id)))
         val t = Speicher.timer.value
         takt(context, an = t.laeuft && !t.abgelaufen(System.currentTimeMillis()))
     }
@@ -204,6 +219,54 @@ object WidgetAktualisierer {
             PendingIntent.getActivity(
                 context, 2,
                 Intent(context, ZeitWahlActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK),
+                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+            )
+        )
+        return views
+    }
+
+    /** Sanduhr-Widget: Bild in der Form des Widgets, Restzeit als Chronometer, drei Knöpfe. */
+    fun baueSanduhr(context: Context, optionen: Bundle? = null): RemoteViews {
+        val t = Speicher.timer.value
+        val jetzt = System.currentTimeMillis()
+        val rest = t.restMs(jetzt)
+        val abgelaufen = t.abgelaufen(jetzt)
+        val laeuft = t.laeuft && !abgelaufen
+        val frisch = !t.laeuft && !t.pausiert && !abgelaufen
+        val views = RemoteViews(context.packageName, R.layout.widget_sanduhr)
+
+        val breiteDp = optionen?.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH)?.takeIf { it > 0 } ?: 160
+        val hoeheDp = optionen?.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT)?.takeIf { it > 0 } ?: 240
+        val b = 420
+        val h = (b * hoeheDp / breiteDp.toFloat()).toInt().coerceIn(300, 900)
+        val bild = Bitmap.createBitmap(b, h, Bitmap.Config.ARGB_8888)
+        val anteil = if (t.dauerMs > 0) (rest.toFloat() / t.dauerMs).coerceIn(0f, 1f) else 0f
+        val farbe = de.oejendorferdamm.dammzeit.ui.sandFarbe(t.dauerMs).let { android.graphics.Color.argb((it.alpha * 255).toInt(), (it.red * 255).toInt(), (it.green * 255).toInt(), (it.blue * 255).toInt()) }
+        // unten Platz für Restzeit und Knöpfe lassen
+        de.oejendorferdamm.dammzeit.ui.SanduhrZeichner.zeichne(Canvas(bild), b.toFloat(), h * 0.86f, anteil, farbe, laeuft && anteil > 0f, 0.35f, if (abgelaufen) 1f else 0f)
+        views.setImageViewBitmap(R.id.sanduhr_bild, bild)
+
+        if (abgelaufen) {
+            views.setViewVisibility(R.id.sanduhr_rest, View.GONE)
+            views.setViewVisibility(R.id.sanduhr_rest_ende, View.VISIBLE)
+        } else {
+            views.setViewVisibility(R.id.sanduhr_rest, View.VISIBLE)
+            views.setViewVisibility(R.id.sanduhr_rest_ende, View.GONE)
+            views.setChronometerCountDown(R.id.sanduhr_rest, true)
+            views.setChronometer(R.id.sanduhr_rest, SystemClock.elapsedRealtime() + rest, null, laeuft)
+        }
+        views.setImageViewResource(R.id.sanduhr_startstopp, when { abgelaufen -> R.drawable.ic_w_stopp; laeuft -> R.drawable.ic_w_pause; else -> R.drawable.ic_w_start })
+        views.setViewVisibility(R.id.sanduhr_zuruecksetzen, if (frisch) View.INVISIBLE else View.VISIBLE)
+        val antippen = aktion(context, WidgetAktionEmpfaenger.AKTION_ANTIPPEN, 0)
+        views.setOnClickPendingIntent(R.id.sanduhr_bild, antippen)
+        views.setOnClickPendingIntent(R.id.sanduhr_rest_rahmen, antippen)
+        views.setOnClickPendingIntent(R.id.sanduhr_startstopp, antippen)
+        views.setOnClickPendingIntent(R.id.sanduhr_zuruecksetzen, aktion(context, WidgetAktionEmpfaenger.AKTION_ZURUECKSETZEN, 1))
+        views.setOnClickPendingIntent(
+            R.id.sanduhr_zeit,
+            PendingIntent.getActivity(
+                context, 3,
+                Intent(context, de.oejendorferdamm.dammzeit.ui.SanduhrWahlActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK),
                 PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
             )
         )

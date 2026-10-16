@@ -1,5 +1,6 @@
 <resources>
     <string name="app_name">DammZeit</string>
+    <string name="widget_sanduhr_beschreibung">Die Sanduhr: Zeit wählen, starten, zurücksetzen (2×3)</string>
     <string name="widget_klein_beschreibung">Die Uhr mit Start, Zurücksetzen und Zeitwahl (2×2)</string>
     <string name="widget_gross_beschreibung">Die Uhr groß mit Start, Zurücksetzen und Zeitwahl (4×4)</string>
     <string name="widget_stoppuhr_beschreibung">Stoppuhr mit Runden – Zeiten für die Bestenliste speichern</string>

@@ -17,6 +17,7 @@ class WidgetTestActivity : Activity() {
     private lateinit var klein: FrameLayout
     private lateinit var gross: FrameLayout
     private lateinit var stoppuhr: FrameLayout
+    private lateinit var sanduhr: FrameLayout
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -25,6 +26,7 @@ class WidgetTestActivity : Activity() {
         klein = FrameLayout(this)
         gross = FrameLayout(this)
         stoppuhr = FrameLayout(this)
+        sanduhr = FrameLayout(this)
         de.oejendorferdamm.dammzeit.stoppuhr.StoppuhrSpeicher.init(this)
         // Für den Test: mit ruhender Uhr beginnen, damit uiautomator die Knöpfe findet
         if (intent.getBooleanExtra("zuruecksetzen", false)) TimerSteuerung.zuruecksetzen(this)
@@ -34,6 +36,7 @@ class WidgetTestActivity : Activity() {
             addView(klein, LinearLayout.LayoutParams((260 * d).toInt(), (260 * d).toInt()).apply { rightMargin = (60 * d).toInt() })
             addView(gross, LinearLayout.LayoutParams((460 * d).toInt(), (460 * d).toInt()))
             addView(stoppuhr, LinearLayout.LayoutParams((400 * d).toInt(), (220 * d).toInt()).apply { leftMargin = (60 * d).toInt() })
+            addView(sanduhr, LinearLayout.LayoutParams((180 * d).toInt(), (270 * d).toInt()).apply { leftMargin = (40 * d).toInt() })
         }
         setContentView(zeile)
     }
@@ -46,6 +49,10 @@ class WidgetTestActivity : Activity() {
             zeige(stoppuhr, de.oejendorferdamm.dammzeit.stoppuhr.StoppuhrWidget.baue(this@WidgetTestActivity, Bundle().apply {
                 putInt(android.appwidget.AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 400)
                 putInt(android.appwidget.AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 220)
+            }))
+            zeige(sanduhr, WidgetAktualisierer.baueSanduhr(this@WidgetTestActivity, Bundle().apply {
+                putInt(android.appwidget.AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 180)
+                putInt(android.appwidget.AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, 270)
             }))
             handler.postDelayed(this, 2000)
         }

@@ -87,6 +87,9 @@ fun DammZeitApp() {
     var menueOffen by remember { mutableStateOf(false) }
     val stoppuhrModus by de.oejendorferdamm.dammzeit.stoppuhr.Ansicht.stoppuhr.collectAsState()
     val sanduhrModus by de.oejendorferdamm.dammzeit.stoppuhr.Ansicht.sanduhr.collectAsState()
+    val laermModus by de.oejendorferdamm.dammzeit.stoppuhr.Ansicht.laerm.collectAsState()
+    val zifferModus by de.oejendorferdamm.dammzeit.stoppuhr.Ansicht.ziffern.collectAsState()
+    var favoritenOffen by remember { mutableStateOf(false) }
     val bestenliste by de.oejendorferdamm.dammzeit.stoppuhr.Ansicht.bestenliste.collectAsState()
     val neuerEintrag by de.oejendorferdamm.dammzeit.stoppuhr.Ansicht.neu.collectAsState()
     var speichernOffen by remember { mutableStateOf(false) }
@@ -134,8 +137,9 @@ fun DammZeitApp() {
         onDispose { view.keepScreenOn = false }
     }
 
-    BackHandler(enabled = menueOffen || speichernOffen || bestenliste != null) {
+    BackHandler(enabled = menueOffen || speichernOffen || bestenliste != null || favoritenOffen) {
         when {
+            favoritenOffen -> favoritenOffen = false
             speichernOffen -> speichernOffen = false
             bestenliste != null -> de.oejendorferdamm.dammzeit.stoppuhr.Ansicht.bestenliste.value = null
             else -> menueOffen = false
@@ -179,7 +183,8 @@ fun DammZeitApp() {
             Row(Modifier.fillMaxSize().systemBarsPadding()) {
                 // --- Die Uhr ---
                 Box(Modifier.weight(1f).fillMaxHeight()) {
-                    if (stoppuhrModus) StoppuhrAnsicht(
+                    if (laermModus) LaermAnsicht(schrift, Modifier.fillMaxSize())
+                    else if (stoppuhrModus) StoppuhrAnsicht(
                         schrift, Modifier.fillMaxSize(),
                         onSpeichern = { speichernOffen = true },
                         onBestenliste = { de.oejendorferdamm.dammzeit.stoppuhr.Ansicht.bestenliste.value = "" }
@@ -194,7 +199,8 @@ fun DammZeitApp() {
                                 fontWeight = FontWeight.SemiBold, letterSpacing = 2.sp
                             )
                         }
-                        Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                        if (zifferModus) ZiffernAnzeige(anzeigeRest, anzeigeDauer, scheibenFarbe, schrift, klingelnd, Modifier.weight(1f).fillMaxWidth())
+                        else Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
                             // Klingelt es, pulsiert ein Leuchten hinter der Uhr und sie "atmet" leicht.
                             val puls = if (klingelnd) {
                                 val t = rememberInfiniteTransition(label = "klingeln")
@@ -266,23 +272,42 @@ fun DammZeitApp() {
                             .shadow(3.dp, androidx.compose.foundation.shape.RoundedCornerShape(50))
                             .clip(androidx.compose.foundation.shape.RoundedCornerShape(50)).background(Karte).padding(8.dp)
                     ) {
-                        for ((name, art) in listOf("Timer" to 0, "Sanduhr" to 1, "Stoppuhr" to 2)) {
-                            val an = when (art) { 2 -> stoppuhrModus; 1 -> !stoppuhrModus && sanduhrModus; else -> !stoppuhrModus && !sanduhrModus }
+                        for ((name, art) in listOf("Timer" to 0, "Sanduhr" to 1, "Stoppuhr" to 2, "Lärm" to 3)) {
+                            val an = when (art) {
+                                3 -> laermModus
+                                2 -> !laermModus && stoppuhrModus
+                                1 -> !laermModus && !stoppuhrModus && sanduhrModus
+                                else -> !laermModus && !stoppuhrModus && !sanduhrModus
+                            }
                             Box(
                                 Modifier.clip(androidx.compose.foundation.shape.RoundedCornerShape(50))
                                     .background(if (an) Text1 else Color.Transparent)
                                     .clickable {
-                                        de.oejendorferdamm.dammzeit.stoppuhr.Ansicht.stoppuhr.value = art == 2
-                                        if (art != 2) de.oejendorferdamm.dammzeit.stoppuhr.Ansicht.sanduhr.value = art == 1
+                                        de.oejendorferdamm.dammzeit.stoppuhr.Ansicht.laerm.value = art == 3
+                                        if (art != 3) de.oejendorferdamm.dammzeit.stoppuhr.Ansicht.stoppuhr.value = art == 2
+                                        if (art < 2) de.oejendorferdamm.dammzeit.stoppuhr.Ansicht.sanduhr.value = art == 1
                                     }
                                     .padding(horizontal = 34.dp, vertical = 16.dp)
                             ) { Text(name, color = if (an) Color.White else Text1, fontSize = 28.sp, fontWeight = FontWeight.SemiBold) }
                         }
                     }
 
-                    // --- Das Zahnrad ---
+                    // --- Bis zur Pause (Timer und Sanduhr) ---
+                    if (!laermModus && !stoppuhrModus) BisZurPauseKnopf(Modifier.align(Alignment.TopCenter).padding(top = 32.dp))
+
+                    // --- Favoriten, Ziffern, Zahnrad ---
                     if (!menueOffen) {
-                        Box(Modifier.align(Alignment.TopEnd).padding(28.dp)) {
+                        Row(Modifier.align(Alignment.TopEnd).padding(28.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                            if (!laermModus && !stoppuhrModus) RundKnopf("Favoriten", { favoritenOffen = true }, groesse = 84.dp) {
+                                Text("★", color = Text1, fontSize = 40.sp)
+                            }
+                            if (!laermModus && !stoppuhrModus && !sanduhrModus) RundKnopf(
+                                if (zifferModus) "Zifferblatt zeigen" else "Große Ziffern zeigen",
+                                { de.oejendorferdamm.dammzeit.stoppuhr.Ansicht.ziffern.value = !zifferModus }, groesse = 84.dp
+                            ) {
+                                Text(if (zifferModus) "◔" else "12", color = Text1, fontSize = if (zifferModus) 40.sp else 30.sp, fontWeight = FontWeight.Black)
+                            }
+                        Box {
                             RundKnopf("Einstellungen", { menueOffen = true }, groesse = 84.dp) {
                                 SymbolBild(Symbol.ZAHNRAD, Text1, Modifier.size(42.dp))
                             }
@@ -292,6 +317,7 @@ fun DammZeitApp() {
                                         .background(Akzent, androidx.compose.foundation.shape.CircleShape)
                                 )
                             }
+                        }
                         }
                     }
                 }
@@ -321,6 +347,7 @@ fun DammZeitApp() {
                 de.oejendorferdamm.dammzeit.stoppuhr.Ansicht.neu.value = b.id
                 de.oejendorferdamm.dammzeit.stoppuhr.Ansicht.bestenliste.value = b.challenge
             }
+            if (favoritenOffen) FavoritenDialog(onSchliessen = { favoritenOffen = false })
             bestenliste?.let { c ->
                 Bestenliste(c.ifEmpty { null }, neuerEintrag) {
                     de.oejendorferdamm.dammzeit.stoppuhr.Ansicht.bestenliste.value = null

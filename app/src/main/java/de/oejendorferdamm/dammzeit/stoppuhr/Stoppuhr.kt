@@ -123,6 +123,10 @@ object Ansicht {
     val stoppuhr = MutableStateFlow(false)
     /** Timer als Sanduhr zeigen (nur wenn nicht [stoppuhr]). */
     val sanduhr = MutableStateFlow(false)
+    /** Lärmampel zeigen (hat Vorrang vor allem anderen). */
+    val laerm = MutableStateFlow(false)
+    /** Timer als große Ziffern statt Zifferblatt. */
+    val ziffern = MutableStateFlow(false)
     /** Bestenliste offen: Challenge (oder "" für die zuletzt benutzte), null = zu. */
     val bestenliste = MutableStateFlow<String?>(null)
     /** Gerade gespeicherter Eintrag (wird hervorgehoben). */

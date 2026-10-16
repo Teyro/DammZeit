@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Die Sanduhr als Widget: Bild, darunter die Restzeit, unten links Zurücksetzen, unten rechts
+     Start/Pause/Stopp, oben rechts Zeit wählen (farbige Sanduhren). -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <ImageView
+        android:id="@+id/sanduhr_bild"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:contentDescription="DammZeit-Sanduhr, antippen zum Starten oder Anhalten"
+        android:scaleType="fitCenter" />
+
+    <FrameLayout
+        android:id="@+id/sanduhr_rest_rahmen"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|center_horizontal"
+        android:layout_marginBottom="4dp"
+        android:background="@drawable/widget_pille_hell"
+        android:paddingLeft="10dp"
+        android:paddingTop="1dp"
+        android:paddingRight="10dp"
+        android:paddingBottom="1dp">
+
+        <Chronometer
+            android:id="@+id/sanduhr_rest"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="#1F2124"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/sanduhr_rest_ende"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Zeit um!"
+            android:textColor="#E01E3C"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
+    </FrameLayout>
+
+    <ImageView
+        android:id="@+id/sanduhr_zuruecksetzen"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_gravity="bottom|start"
+        android:layout_margin="2dp"
+        android:background="@drawable/widget_knopf_hell"
+        android:contentDescription="Sanduhr zurücksetzen"
+        android:padding="10dp"
+        android:src="@drawable/ic_w_zurueck" />
+
+    <ImageView
+        android:id="@+id/sanduhr_startstopp"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="2dp"
+        android:background="@drawable/widget_knopf_start_dunkel"
+        android:contentDescription="Sanduhr starten oder anhalten"
+        android:padding="10dp"
+        android:src="@drawable/ic_w_start" />
+
+    <ImageView
+        android:id="@+id/sanduhr_zeit"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_gravity="top|end"
+        android:layout_margin="2dp"
+        android:background="@drawable/widget_knopf_hell"
+        android:contentDescription="Sanduhr wählen"
+        android:padding="10dp"
+        android:src="@drawable/ic_w_zeit" />
+</FrameLayout>

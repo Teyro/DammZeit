@@ -11,6 +11,8 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+    <!-- Nur für die Lärmampel: misst den Pegel, nimmt nichts auf und speichert nichts. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
     <!-- Nur für Tablets und Touch-Boards gedacht, nicht für Handys. -->
     <supports-screens
@@ -90,6 +92,20 @@
             android:taskAffinity="de.oejendorferdamm.dammzeit.speichern"
             android:theme="@style/Theme.DammZeit.Auswahl"
             android:windowSoftInputMode="adjustPan" />
+
+        <receiver android:name=".widget.SanduhrWidget" android:exported="true" android:label="DammZeit Sanduhr">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_sanduhr_info" />
+        </receiver>
+
+        <activity
+            android:name=".ui.SanduhrWahlActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:taskAffinity="de.oejendorferdamm.dammzeit.sanduhrwahl"
+            android:theme="@style/Theme.DammZeit.Auswahl" />
 
         <receiver android:name=".widget.WidgetAktionEmpfaenger" android:exported="false" />
         <receiver android:name=".widget.WidgetTaktEmpfaenger" android:exported="false" />

@@ -68,8 +68,9 @@ val Akzent = Color(0xFFE01E3C)
 val Flaeche = Color(0xFFE1E4E8)
 
 /**
- * Die aktuelle Uhrzeit als Compose-State. Solange [aktiv], wird sie jedes Bild neu gelesen –
- * dadurch läuft die Scheibe flüssig in Echtzeit statt in Sekundensprüngen.
+ * Die aktuelle Uhrzeit als Compose-State. Solange [aktiv], wird sie etwa 15-mal pro Sekunde neu
+ * gelesen – die Scheibe läuft damit flüssig, ohne die ganze Oberfläche in jedem einzelnen Bild
+ * (bis zu 60× pro Sekunde) neu aufzubauen. Das entlastet ältere Tafeln deutlich.
  */
 @Composable
 fun rememberJetzt(aktiv: Boolean): State<Long> {
@@ -78,7 +79,8 @@ fun rememberJetzt(aktiv: Boolean): State<Long> {
         jetzt.longValue = System.currentTimeMillis()
         while (aktiv) {
             withFrameMillis { }
-            jetzt.longValue = System.currentTimeMillis()
+            val t = System.currentTimeMillis()
+            if (t - jetzt.longValue >= 66L) jetzt.longValue = t
         }
     }
     return jetzt

@@ -34,6 +34,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -164,6 +166,33 @@ fun EinstellungenPanel(
             Schalter("Restzeit zusätzlich als Zahl", einstellungen.restzeitAnzeigen) { an -> aendere { it.copy(restzeitAnzeigen = an) } }
         }
 
+        Karte("Pausen und Stundenende") {
+            Text("Für den Knopf „Bis zur Pause“ oben: er stellt die Uhr auf die Zeit bis zum nächsten Klingeln.", color = Text2, fontSize = 17.sp)
+            Spacer(Modifier.height(10.dp))
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                einstellungen.pausenZeiten.forEach { z ->
+                    Auswahl("$z  ✕", false, { aendere { it.copy(pausenZeiten = it.pausenZeiten - z) } }, schrift = 18.sp)
+                }
+            }
+            Spacer(Modifier.height(12.dp))
+            var stunde by remember { mutableIntStateOf(10) }
+            var minute by remember { mutableIntStateOf(0) }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                RundKnopf("Stunde weniger", { stunde = (stunde + 23) % 24 }, groesse = 52.dp, farbe = Flaeche) { SymbolBild(Symbol.MINUS, Text1, Modifier.size(22.dp)) }
+                Text("%02d".format(stunde), color = Text1, fontSize = 30.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 10.dp))
+                RundKnopf("Stunde mehr", { stunde = (stunde + 1) % 24 }, groesse = 52.dp, farbe = Flaeche) { SymbolBild(Symbol.PLUS, Text1, Modifier.size(22.dp)) }
+                Text(":", color = Text1, fontSize = 30.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 10.dp))
+                RundKnopf("Fünf Minuten weniger", { minute = (minute + 55) % 60 }, groesse = 52.dp, farbe = Flaeche) { SymbolBild(Symbol.MINUS, Text1, Modifier.size(22.dp)) }
+                Text("%02d".format(minute), color = Text1, fontSize = 30.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 10.dp))
+                RundKnopf("Fünf Minuten mehr", { minute = (minute + 5) % 60 }, groesse = 52.dp, farbe = Flaeche) { SymbolBild(Symbol.PLUS, Text1, Modifier.size(22.dp)) }
+                Spacer(Modifier.width(14.dp))
+                Auswahl("Hinzufügen", true, {
+                    val z = "%02d:%02d".format(stunde, minute)
+                    aendere { it.copy(pausenZeiten = (it.pausenZeiten + z).distinct().sorted()) }
+                }, schrift = 18.sp)
+            }
+        }
+
         Karte("Klingelton") {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Ton.entries.forEach { ton ->
@@ -261,7 +290,7 @@ private fun Karte(titel: String, inhalt: @Composable () -> Unit) {
 }
 
 @Composable
-private fun Schalter(titel: String, an: Boolean, onAendern: (Boolean) -> Unit) {
+fun Schalter(titel: String, an: Boolean, onAendern: (Boolean) -> Unit) {
     Row(Modifier.fillMaxWidth().padding(top = 14.dp), verticalAlignment = Alignment.CenterVertically) {
         Text(titel, color = Text1, fontSize = 19.sp, modifier = Modifier.weight(1f))
         Switch(

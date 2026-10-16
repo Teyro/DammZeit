@@ -54,9 +54,49 @@ object Speicher {
             titelAnzeigen = prefs.getBoolean("titel", true),
             sofortStarten = prefs.getBoolean("sofort_starten", true),
             bildschirmAn = prefs.getBoolean("bildschirm_an", true),
-            autoUpdate = prefs.getBoolean("auto_update", true)
+            autoUpdate = prefs.getBoolean("auto_update", true),
+            pausenZeiten = (prefs.getString("pausen", null) ?: STANDARD_PAUSEN).split(',').map { it.trim() }.filter { ZEIT.matches(it) }.sorted(),
+            laermGelb = prefs.getInt("laerm_gelb", 55),
+            laermRot = prefs.getInt("laerm_rot", 70),
+            laermTon = prefs.getBoolean("laerm_ton", false)
         )
+        _favoriten.value = ladeFavoriten(prefs.getString("favoriten", "") ?: "")
     }
+
+    // ------------------------------------------------------------ Favoriten
+
+    private val _favoriten = MutableStateFlow<List<Favorit>>(emptyList())
+    val favoriten: StateFlow<List<Favorit>> = _favoriten
+
+    @Synchronized
+    fun speichereFavoriten(liste: List<Favorit>) {
+        val a = org.json.JSONArray()
+        liste.forEach { f ->
+            a.put(org.json.JSONObject().put("name", f.name).put("dauer", f.dauerMs).put("farbe", f.farbe.name)
+                .put("eigene", f.eigeneFarbe).put("sanduhr", f.sanduhr))
+        }
+        prefs.edit().putString("favoriten", a.toString()).apply()
+        _favoriten.value = liste
+    }
+
+    private fun ladeFavoriten(text: String): List<Favorit> = try {
+        val a = org.json.JSONArray(text)
+        (0 until a.length()).mapNotNull { i ->
+            val o = a.optJSONObject(i) ?: return@mapNotNull null
+            Favorit(
+                o.optString("name").take(40).ifBlank { return@mapNotNull null },
+                o.optLong("dauer", 0L).takeIf { it in 1000L..12 * 3_600_000L } ?: return@mapNotNull null,
+                FarbModus.entries.find { it.name == o.optString("farbe") } ?: FarbModus.PETROL,
+                o.optInt("eigene", 0xFF1E6FD9.toInt()),
+                o.optBoolean("sanduhr", false)
+            )
+        }
+    } catch (_: Exception) {
+        emptyList()
+    }
+
+    private const val STANDARD_PAUSEN = "09:30,11:20,13:00"
+    val ZEIT = Regex("^([01]\\d|2[0-3]):[0-5]\\d$")
 
     fun finde(id: Long): ZeitTimer? = _timer.value.takeIf { it.id == id }
 
@@ -89,6 +129,10 @@ object Speicher {
             .putBoolean("sofort_starten", neu.sofortStarten)
             .putBoolean("bildschirm_an", neu.bildschirmAn)
             .putBoolean("auto_update", neu.autoUpdate)
+            .putString("pausen", neu.pausenZeiten.joinToString(","))
+            .putInt("laerm_gelb", neu.laermGelb)
+            .putInt("laerm_rot", neu.laermRot)
+            .putBoolean("laerm_ton", neu.laermTon)
             .apply()
         _einstellungen.value = neu
     }
@@ -110,5 +154,20 @@ data class Einstellungen(
     val titelAnzeigen: Boolean = true,
     val sofortStarten: Boolean = true,
     val bildschirmAn: Boolean = true,
-    val autoUpdate: Boolean = true
+    val autoUpdate: Boolean = true,
+    /** Stundenende/Pausen („HH:mm“) für „Bis zur Pause“. */
+    val pausenZeiten: List<String> = emptyList(),
+    /** Lärmampel: ab diesem Pegel (0–100) gelb bzw. rot; Ton bei Rot. */
+    val laermGelb: Int = 55,
+    val laermRot: Int = 70,
+    val laermTon: Boolean = false
+)
+
+/** Gespeicherte Vorlage: Name, Zeit, Farbe und ob als Sanduhr. */
+data class Favorit(
+    val name: String,
+    val dauerMs: Long,
+    val farbe: FarbModus,
+    val eigeneFarbe: Int,
+    val sanduhr: Boolean
 )

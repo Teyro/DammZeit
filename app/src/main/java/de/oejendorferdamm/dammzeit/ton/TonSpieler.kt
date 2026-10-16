@@ -33,7 +33,13 @@ class TonSpieler(private val context: Context) {
         .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
         .build()
 
-    /** Startet den Ton; [wiederholen] = in Schleife bis [stopp]. */
+    private val handler = android.os.Handler(android.os.Looper.getMainLooper())
+    private val aufraeumen = Runnable { stopp() }
+
+    /**
+     * Startet den Ton; [wiederholen] = in Schleife bis [stopp]. Einmal gespielt (Probehören,
+     * Lärmampel) räumt er sich danach selbst auf – sonst bliebe die Wecker-Lautstärke verstellt.
+     */
     @Synchronized
     fun spiele(ton: Ton, wiederholen: Boolean, lautstaerke: Float = 1f) {
         stopp()
@@ -43,6 +49,10 @@ class TonSpieler(private val context: Context) {
             Ton.STILL -> Unit
             Ton.SYSTEM -> spieleGeraeteTon(wiederholen)
             else -> spieleErzeugt(ton, wiederholen)
+        }
+        if (!wiederholen && ton != Ton.STILL) {
+            val dauer = if (ton == Ton.SYSTEM) (geraeteTon?.duration?.takeIf { it > 0 } ?: 5000) else daten(ton).size * 1000 / RATE
+            handler.postDelayed(aufraeumen, dauer + 300L)
         }
     }
 
@@ -58,6 +68,7 @@ class TonSpieler(private val context: Context) {
 
     @Synchronized
     fun stopp() {
+        handler.removeCallbacks(aufraeumen)
         spur?.let {
             try {
                 it.stop()
@@ -117,7 +128,7 @@ class TonSpieler(private val context: Context) {
     }
 
     private fun spieleErzeugt(ton: Ton, wiederholen: Boolean) {
-        val daten = erzeuge(ton)
+        val daten = daten(ton)
         val track = AudioTrack.Builder()
             .setAudioAttributes(attribute)
             .setAudioFormat(
@@ -139,6 +150,10 @@ class TonSpieler(private val context: Context) {
 
     companion object {
         private const val RATE = 44_100
+
+        /** Einmal berechnete Töne (die Rechnung dauert spürbar – nicht bei jedem Abspielen). */
+        private val fertig = java.util.concurrent.ConcurrentHashMap<Ton, ShortArray>()
+        fun daten(ton: Ton): ShortArray = fertig.getOrPut(ton) { erzeuge(ton) }
 
         /** Ein Durchgang des Tons (inkl. Pause danach), als 16-Bit-PCM. */
         fun erzeuge(ton: Ton): ShortArray = normalisiert(when (ton) {

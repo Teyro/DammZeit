@@ -251,6 +251,11 @@ private fun DrawScope.sanduhr(anteil: Float, farbe: Color, rieselt: Boolean, rie
     }
     val gesamt = flaechen[stufen]
     fun stufeFuer(menge: Float): Int = flaechen.indexOfFirst { it >= menge * gesamt }.coerceAtLeast(0)
+    // Unten füllt sich das Glas vom Boden (u = 0) her
+    val flaechenUnten = FloatArray(stufen + 1)
+    for (i in 1..stufen) flaechenUnten[i] = flaechenUnten[i - 1] + halbBreite((i - 1) / stufen.toFloat())
+    fun hoeheUnten(menge: Float): Float =
+        flaechenUnten.indexOfFirst { it >= menge * gesamt }.let { if (it < 0) stufen else it } / stufen.toFloat()
 
     val sandHell = lerp(farbe, Color.White, 0.25f)
     val sandDunkel = lerp(farbe, Color.Black, 0.22f)
@@ -275,8 +280,7 @@ private fun DrawScope.sanduhr(anteil: Float, farbe: Color, rieselt: Boolean, rie
         // --- unten: Haufen
         val rest = 1f - anteil
         if (rest > 0f) {
-            val s = stufeFuer(rest)
-            val uSpiegel = 1f - s / stufen.toFloat()
+            val uSpiegel = hoeheUnten(rest)
             val yEbene = glasUnten - uSpiegel * halbGlas
             val kegel = halbGlas * 0.16f * (0.4f + 0.6f * rest).coerceAtMost(1f) * (1f - uSpiegel * 0.6f)
             val haufen = Path().apply {
@@ -292,7 +296,7 @@ private fun DrawScope.sanduhr(anteil: Float, farbe: Color, rieselt: Boolean, rie
         }
         // --- Strahl
         if (rieselt) {
-            val yEnde = glasUnten - (1f - stufeFuer(1f - anteil) / stufen.toFloat()) * halbGlas - halbGlas * 0.1f
+            val yEnde = glasUnten - hoeheUnten(1f - anteil) * halbGlas - halbGlas * 0.1f
             drawLine(farbe, Offset(cx, cy - halbGlas * 0.02f), Offset(cx, yEnde), strokeWidth = hals * 0.7f)
             // fallende Körner im Strahl
             val laenge = yEnde - cy

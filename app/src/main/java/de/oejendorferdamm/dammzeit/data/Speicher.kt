@@ -54,7 +54,7 @@ object Speicher {
             titelAnzeigen = prefs.getBoolean("titel", true),
             sofortStarten = prefs.getBoolean("sofort_starten", true),
             bildschirmAn = prefs.getBoolean("bildschirm_an", true),
-            autoUpdate = prefs.getBoolean("auto_update", true),
+            autoUpdate = prefs.getBoolean("auto_update2", false) // neuer Schlüssel (2.2.6): überall erst einmal aus,
             pausenZeiten = (prefs.getString("pausen", null) ?: STANDARD_PAUSEN).split(',').map { it.trim() }.filter { ZEIT.matches(it) }.sorted(),
             laermGelb = prefs.getInt("laerm_gelb", 55),
             laermRot = prefs.getInt("laerm_rot", 70),
@@ -128,7 +128,7 @@ object Speicher {
             .putBoolean("titel", neu.titelAnzeigen)
             .putBoolean("sofort_starten", neu.sofortStarten)
             .putBoolean("bildschirm_an", neu.bildschirmAn)
-            .putBoolean("auto_update", neu.autoUpdate)
+            .putBoolean("auto_update2", neu.autoUpdate)
             .putString("pausen", neu.pausenZeiten.joinToString(","))
             .putInt("laerm_gelb", neu.laermGelb)
             .putInt("laerm_rot", neu.laermRot)
@@ -154,7 +154,7 @@ data class Einstellungen(
     val titelAnzeigen: Boolean = true,
     val sofortStarten: Boolean = true,
     val bildschirmAn: Boolean = true,
-    val autoUpdate: Boolean = true,
+    val autoUpdate: Boolean = false,
     /** Stundenende/Pausen („HH:mm“) für „Bis zur Pause“. */
     val pausenZeiten: List<String> = emptyList(),
     /** Lärmampel: ab diesem Pegel (0–100) gelb bzw. rot; Ton bei Rot. */

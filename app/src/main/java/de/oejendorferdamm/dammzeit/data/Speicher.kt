@@ -54,7 +54,7 @@ object Speicher {
             titelAnzeigen = prefs.getBoolean("titel", true),
             sofortStarten = prefs.getBoolean("sofort_starten", true),
             bildschirmAn = prefs.getBoolean("bildschirm_an", true),
-            autoUpdate = prefs.getBoolean("auto_update2", false) // neuer Schlüssel (2.2.6): überall erst einmal aus,
+            autoUpdate = prefs.getBoolean("auto_update2", false), // neuer Schlüssel (2.2.6): überall erst einmal aus
             pausenZeiten = (prefs.getString("pausen", null) ?: STANDARD_PAUSEN).split(',').map { it.trim() }.filter { ZEIT.matches(it) }.sorted(),
             laermGelb = prefs.getInt("laerm_gelb", 55),
             laermRot = prefs.getInt("laerm_rot", 70),

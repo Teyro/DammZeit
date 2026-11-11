@@ -38,6 +38,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -89,21 +90,48 @@ fun EinstellungenPanel(
     DisposableEffect(Unit) { onDispose { spieler.stopp() } }
     fun aendere(f: (Einstellungen) -> Einstellungen) = Speicher.aendereEinstellungen(f)
 
-    Column(
-        modifier
-            .shadow(16.dp)
-            .background(HellerGrund)
-            .verticalScroll(rememberScrollState())
-            .padding(28.dp)
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("Einstellungen", color = Text1, fontSize = 34.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+    // Aufbau wie in den anderen Schul-Apps: Übersicht → Bereich, ‹ zurück, ✕ immer oben
+    var seite by rememberSaveable { mutableStateOf<String?>(null) }
+    androidx.activity.compose.BackHandler(enabled = seite != null) { seite = null }
+    val titel = when (seite) {
+        "aussehen" -> "Aussehen"; "zifferblatt" -> "Zifferblatt"; "klingel" -> "Klingelton"; "pausen" -> "Pausen"
+        "bedienung" -> "Bedienung"; "leistung" -> "Leistung"; "update" -> "Updates"; "ueber" -> "Über DammZeit"
+        else -> "Einstellungen"
+    }
+    val sparsam = LokalSparsam.current
+    Column(modifier.shadow(if (sparsam) 0.dp else 16.dp).background(HellerGrund)) {
+        Row(Modifier.fillMaxWidth().padding(start = 28.dp, end = 28.dp, top = 28.dp, bottom = 16.dp), verticalAlignment = Alignment.CenterVertically) {
+            if (seite != null) {
+                RundKnopf("Zurück zur Übersicht", { seite = null }, groesse = 72.dp) {
+                    SymbolBild(Symbol.ZURUECK_PFEIL, Text1, Modifier.size(32.dp))
+                }
+                Spacer(Modifier.width(18.dp))
+            }
+            Text(titel, color = Text1, fontSize = 34.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
             RundKnopf("Einstellungen schließen", onSchliessen, groesse = 72.dp) {
                 SymbolBild(Symbol.SCHLIESSEN, Text1, Modifier.size(32.dp))
             }
         }
-        Spacer(Modifier.height(20.dp))
-
+        androidx.compose.runtime.key(seite) {
+        Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(start = 28.dp, end = 28.dp, bottom = 28.dp)) {
+        when (seite) {
+            null -> {
+                val an = { b: Boolean -> if (b) "an" else "aus" }
+                BereichZeile("🎨", Color(0xFF7C3AED), "Aussehen", "${einstellungen.farbe.bezeichnung} · Hintergrund ${einstellungen.hintergrund.bezeichnung}") { seite = "aussehen" }
+                BereichZeile("🕘", Color(0xFF0891B2), "Zifferblatt", "${einstellungen.skalaMinuten} Minuten · ${einstellungen.laufrichtung.bezeichnung}") { seite = "zifferblatt" }
+                BereichZeile("🔔", Color(0xFFD97706), "Klingelton",
+                    "${einstellungen.ton.bezeichnung} · ${if (einstellungen.klingelSekunden == 0) "bis zum Antippen" else klingelText(einstellungen.klingelSekunden)}") { seite = "klingel" }
+                BereichZeile("⏰", Color(0xFFDB2777), "Pausen",
+                    if (einstellungen.pausenZeiten.isEmpty()) "keine Zeiten" else einstellungen.pausenZeiten.joinToString(" · ")) { seite = "pausen" }
+                BereichZeile("👆", Color(0xFF16A34A), "Bedienung",
+                    "Sofort starten ${an(einstellungen.sofortStarten)} · Bildschirm anlassen ${an(einstellungen.bildschirmAn)} · Widget") { seite = "bedienung" }
+                BereichZeile("⚡", Color(0xFFCA8A04), "Leistung", leistungText(einstellungen.leistung)) { seite = "leistung" }
+                BereichZeile("⬆️", Color(0xFF2563EB), "Updates",
+                    if (updateInfo != null) "Neue Version ${updateInfo.version} verfügbar" else "Installiert: $version · automatisch prüfen ${an(einstellungen.autoUpdate)}",
+                    hinweis = updateInfo != null) { seite = "update" }
+                BereichZeile("ℹ️", Color(0xFF6B7280), "Über DammZeit", "Version $version · freie Software") { seite = "ueber" }
+            }
+            "aussehen" -> {
         Karte("Farbe der Zeitscheibe") {
             FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 FarbModus.entries.forEach { modus ->
@@ -145,6 +173,8 @@ fun EinstellungenPanel(
             }
         }
 
+            }
+            "zifferblatt" -> {
         Karte("Zifferblatt") {
             Text("Minuten für eine volle Runde", color = Text2, fontSize = 17.sp)
             Spacer(Modifier.height(8.dp))
@@ -166,6 +196,8 @@ fun EinstellungenPanel(
             Schalter("Restzeit zusätzlich als Zahl", einstellungen.restzeitAnzeigen) { an -> aendere { it.copy(restzeitAnzeigen = an) } }
         }
 
+            }
+            "pausen" -> {
         Karte("Pausen und Stundenende") {
             Text("Für den Knopf „Bis zur Pause“ oben: er stellt die Uhr auf die Zeit bis zum nächsten Klingeln.", color = Text2, fontSize = 17.sp)
             Spacer(Modifier.height(10.dp))
@@ -193,6 +225,8 @@ fun EinstellungenPanel(
             }
         }
 
+            }
+            "klingel" -> {
         Karte("Klingelton") {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Ton.entries.forEach { ton ->
@@ -239,6 +273,8 @@ fun EinstellungenPanel(
             )
         }
 
+            }
+            "bedienung" -> {
         Karte("Bedienung") {
             Schalter("Nach dem Einstellen sofort starten", einstellungen.sofortStarten) { an -> aendere { it.copy(sofortStarten = an) } }
             Schalter("Bildschirm anlassen, solange die Uhr läuft", einstellungen.bildschirmAn) { an -> aendere { it.copy(bildschirmAn = an) } }
@@ -259,12 +295,69 @@ fun EinstellungenPanel(
             }
         }
 
-        UpdateKarte(version, updateInfo, pruefungLaeuft, bereitsAktuell, einstellungen.autoUpdate, onJetztPruefen)
+            }
+            "leistung" -> LeistungKarte(einstellungen.leistung) { neu -> aendere { it.copy(leistung = neu) } }
+            "update" -> UpdateKarte(version, updateInfo, pruefungLaeuft, bereitsAktuell, einstellungen.autoUpdate, onJetztPruefen)
+            else -> Karte("DammZeit $version") {
+                Text("Freie Software unter der GNU GPL v3 · github.com/Teyro/DammZeit", color = Text2, fontSize = 18.sp)
+                Spacer(Modifier.height(10.dp))
+                Text("Ein Timer wie der Time Timer für die Tafeln der Schule am Öjendorfer Damm.", color = Text2, fontSize = 18.sp)
+            }
+        }
+        }
+        }
+    }
+}
 
+private fun klingelText(s: Int) = if (s < 60) "$s Sek" else "${s / 60} Min"
+
+private fun leistungText(wahl: String) = when (wahl) {
+    Leistung.VOLL -> "Voll – alle Animationen"
+    Leistung.SPAR -> "Sparsam – für langsame Boards"
+    else -> "Automatisch · hier ${if (Leistung.automatischSparsam) "sparsam (Android 9 oder älter)" else "voll (ab Android 10)"}"
+}
+
+/** Leistung: Automatik, voll oder sparsam – wirkt sofort */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun LeistungKarte(wahl: String, onWahl: (String) -> Unit) {
+    Karte("Leistung") {
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Auswahl("Automatisch", wahl == Leistung.AUTO, { onWahl(Leistung.AUTO) }, schrift = 18.sp)
+            Auswahl("Voll", wahl == Leistung.VOLL, { onWahl(Leistung.VOLL) }, schrift = 18.sp)
+            Auswahl("Sparsam", wahl == Leistung.SPAR, { onWahl(Leistung.SPAR) }, schrift = 18.sp)
+        }
+        Spacer(Modifier.height(16.dp))
         Text(
-            "DammZeit $version · freie Software unter der GNU GPL v3 · github.com/Teyro/DammZeit",
-            color = Text2, fontSize = 14.sp, modifier = Modifier.padding(top = 8.dp)
+            "Automatisch: ab Android 10 voll, auf älteren Boards sparsam. Sparsam heißt: keine Animationen, " +
+                "Schatten und Verläufe, kein rieselnder Sand, die Uhr zeichnet nur viermal pro Sekunde neu. " +
+                "Uhr, Klingeln und alle Funktionen bleiben gleich.",
+            color = Text2, fontSize = 17.sp
         )
+        Spacer(Modifier.height(10.dp))
+        Text("Dieses Board: Android ${android.os.Build.VERSION.RELEASE} → ${if (Leistung.automatischSparsam) "sparsam" else "voll"}", color = Text1, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
+    }
+}
+
+/** Zeile der Übersicht: Symbol im Farbkreis, Titel, Kurzfassung, Pfeil – die ganze Zeile ist der Knopf. */
+@Composable
+private fun BereichZeile(symbol: String, farbe: Color, titel: String, text: String, hinweis: Boolean = false, onClick: () -> Unit) {
+    val quelle = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+    Row(
+        Modifier.fillMaxWidth().padding(bottom = 14.dp).drueckFeder(quelle)
+            .shadow(if (LokalSparsam.current) 0.dp else 2.dp, RoundedCornerShape(26.dp)).clip(RoundedCornerShape(26.dp)).background(Color.White)
+            .clickable(quelle, androidx.compose.material3.ripple(), role = Role.Button, onClick = onClick)
+            .padding(horizontal = 22.dp, vertical = 18.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(Modifier.size(64.dp).clip(CircleShape).background(farbe.copy(alpha = 0.16f)), contentAlignment = Alignment.Center) {
+            Text(symbol, fontSize = 30.sp)
+        }
+        Column(Modifier.weight(1f).padding(horizontal = 20.dp)) {
+            Text(titel, color = Text1, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+            Text(text, color = if (hinweis) Akzent else Text2, fontSize = 17.sp, maxLines = 2)
+        }
+        Text("›", color = Text2, fontSize = 40.sp)
     }
 }
 

@@ -102,6 +102,7 @@ fun SanduhrAnsicht(schrift: Color, modifier: Modifier = Modifier) {
     val farbe = sandFarbe(timer.dauerMs)
 
     // Umdrehen beim Wählen einer Zeit
+    val sparsam = LokalSparsam.current
     val drehung = remember { Animatable(0f) }
     val scope = rememberCoroutineScope()
     fun waehle(z: SandZeit) {
@@ -111,15 +112,21 @@ fun SanduhrAnsicht(schrift: Color, modifier: Modifier = Modifier) {
         }
         TimerSteuerung.setzeDauer(context, z.minuten * 60_000L, starten = true)
         scope.launch {
+            if (sparsam) return@launch
             drehung.snapTo(-180f)
             drehung.animateTo(0f, tween(700, easing = FastOutSlowInEasing))
         }
     }
 
     // Rieselnder Sand und Leuchten beim Klingeln
-    val t = rememberInfiniteTransition(label = "sand")
-    val riesel by t.animateFloat(0f, 1f, infiniteRepeatable(tween(420, easing = LinearEasing)), label = "riesel")
-    val puls by t.animateFloat(0f, 1f, infiniteRepeatable(tween(750), RepeatMode.Reverse), label = "puls")
+    // sparsam: stehender Strahl, kein Leuchten – die Dauer-Animation kostet alte Boards jedes Bild
+    var riesel = 0f
+    var puls = 0f
+    if (!sparsam) {
+        val t = rememberInfiniteTransition(label = "sand")
+        riesel = t.animateFloat(0f, 1f, infiniteRepeatable(tween(420, easing = LinearEasing)), label = "riesel").value
+        puls = t.animateFloat(0f, 1f, infiniteRepeatable(tween(750), RepeatMode.Reverse), label = "puls").value
+    }
 
     val startZustand = when {
         klingelnd -> StartZustand.STOPP
@@ -181,7 +188,7 @@ fun SandKnopf(z: SandZeit, gewaehlt: Boolean, onClick: () -> Unit) {
         Modifier
             .drueckFeder(quelle)
             .size(126.dp)
-            .shadow(if (gewaehlt) 12.dp else 5.dp, CircleShape)
+            .shadow(if (LokalSparsam.current) 0.dp else if (gewaehlt) 12.dp else 5.dp, CircleShape)
             .background(Color.White, CircleShape)
             .padding(if (gewaehlt) 0.dp else 6.dp)
             .background(Brush.verticalGradient(listOf(lerp(z.farbe, Color.White, 0.25f), z.farbe, lerp(z.farbe, Color.Black, 0.18f))), CircleShape)

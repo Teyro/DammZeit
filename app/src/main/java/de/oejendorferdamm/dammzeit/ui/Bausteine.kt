@@ -5,6 +5,7 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.snap
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
@@ -75,9 +76,12 @@ val Flaeche = Color(0xFFE1E4E8)
 @Composable
 fun rememberJetzt(aktiv: Boolean): State<Long> {
     val jetzt = remember { mutableLongStateOf(System.currentTimeMillis()) }
-    LaunchedEffect(aktiv) {
+    val sparsam = LokalSparsam.current
+    LaunchedEffect(aktiv, sparsam) {
         jetzt.longValue = System.currentTimeMillis()
         while (aktiv) {
+            // sparsam: viermal pro Sekunde reicht für Scheibe und Ziffern, dazwischen schläft die App
+            if (sparsam) { kotlinx.coroutines.delay(250L); jetzt.longValue = System.currentTimeMillis(); continue }
             withFrameMillis { }
             val t = System.currentTimeMillis()
             if (t - jetzt.longValue >= 66L) jetzt.longValue = t
@@ -149,6 +153,7 @@ fun Zifferblatt(
 /** Knöpfe geben beim Drücken sichtbar nach und federn zurück. */
 @Composable
 fun Modifier.drueckFeder(quelle: MutableInteractionSource): Modifier {
+    if (LokalSparsam.current) return this
     val gedrueckt by quelle.collectIsPressedAsState()
     val faktor by animateFloatAsState(
         if (gedrueckt) 0.92f else 1f,
@@ -173,20 +178,25 @@ enum class StartZustand(val text: String, val symbol: Symbol) {
 @Composable
 fun StartKnopf(zustand: StartZustand, farbe: Color, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val quelle = remember { MutableInteractionSource() }
-    val hintergrund by animateColorAsState(farbe, tween(450), label = "startFarbe")
+    val sparsam = LokalSparsam.current
+    val hintergrund by animateColorAsState(farbe, if (sparsam) snap() else tween(450), label = "startFarbe")
     Box(
         modifier = modifier
             .drueckFeder(quelle)
             .height(96.dp)
             .width(300.dp)
-            .shadow(10.dp, RoundedCornerShape(50), ambientColor = hintergrund, spotColor = hintergrund)
+            .shadow(if (sparsam) 0.dp else 10.dp, RoundedCornerShape(50), ambientColor = hintergrund, spotColor = hintergrund)
             .clip(RoundedCornerShape(50))
             .background(hintergrund)
             .clickable(interactionSource = quelle, indication = null, role = Role.Button, onClick = onClick)
             .semantics { contentDescription = zustand.text },
         contentAlignment = Alignment.Center
     ) {
-        AnimatedContent(
+        if (sparsam) Row(verticalAlignment = Alignment.CenterVertically) {
+            SymbolBild(zustand.symbol, Color.White, Modifier.size(38.dp))
+            Spacer(Modifier.width(16.dp))
+            Text(zustand.text, color = Color.White, fontSize = 38.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+        } else AnimatedContent(
             targetState = zustand,
             transitionSpec = {
                 (fadeIn(tween(220)) + scaleIn(tween(260), initialScale = 0.7f)) togetherWith
@@ -219,7 +229,7 @@ fun RundKnopf(
         modifier = modifier
             .drueckFeder(quelle)
             .size(groesse)
-            .shadow(if (farbe == Color.Transparent) 0.dp else 3.dp, CircleShape)
+            .shadow(if (farbe == Color.Transparent || LokalSparsam.current) 0.dp else 3.dp, CircleShape)
             .clip(CircleShape)
             .background(farbe)
             .clickable(interactionSource = quelle, indication = androidx.compose.material3.ripple(), enabled = aktiviert, role = Role.Button, onClick = onClick)

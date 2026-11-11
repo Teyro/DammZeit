@@ -6,6 +6,8 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.RepeatMode
@@ -80,7 +82,14 @@ import kotlinx.coroutines.launch
  */
 @Composable
 fun DammZeitApp() {
+    val wahl by remember { Speicher.einstellungen }.collectAsState()
+    androidx.compose.runtime.CompositionLocalProvider(LokalSparsam provides Leistung.sparsam(wahl.leistung)) { DammZeitInhalt() }
+}
+
+@Composable
+private fun DammZeitInhalt() {
     val context = LocalContext.current
+    val sparsam = LokalSparsam.current
     val timer by Speicher.timer.collectAsState()
     val einstellungen by Speicher.einstellungen.collectAsState()
     val klingelt by KlingelDienst.klingelt.collectAsState()
@@ -108,16 +117,18 @@ fun DammZeitApp() {
     val direkt = laeuft || gezogeneDauer != null
     val gleitend = remember { Animatable(zielRest.toFloat()) }
     val zielAktuell by rememberUpdatedState(zielRest)
-    LaunchedEffect(direkt) {
-        if (direkt) while (true) {
+    LaunchedEffect(direkt, sparsam) {
+        // sparsam kein Gleiten: die Scheibe springt, statt in jedem Bild neu gezeichnet zu werden
+        if (sparsam) gleitend.snapTo(zielAktuell.toFloat())
+        else if (direkt) while (true) {
             gleitend.snapTo(zielAktuell.toFloat())
             withFrameMillis { }
         }
     }
     LaunchedEffect(zielRest, direkt) {
-        if (!direkt) gleitend.animateTo(zielRest.toFloat(), spring(dampingRatio = 0.8f, stiffness = 90f))
+        if (!direkt && !sparsam) gleitend.animateTo(zielRest.toFloat(), spring(dampingRatio = 0.8f, stiffness = 90f))
     }
-    val anzeigeRest = if (direkt) zielRest else gleitend.value.toLong().coerceAtLeast(0L)
+    val anzeigeRest = if (direkt || sparsam) zielRest else gleitend.value.toLong().coerceAtLeast(0L)
     val klingelnd = klingelt != null || abgelaufen
     val frisch = !timer.laeuft && !timer.pausiert && !klingelnd
     val startZustand = when {
@@ -178,7 +189,7 @@ fun DammZeitApp() {
 
     // Leichter Verlauf nach unten gibt der Fläche Tiefe.
     val verlauf = Brush.verticalGradient(listOf(lerp(grund, Color.White, 0.05f), grund, lerp(grund, Color.Black, 0.07f)))
-    Box(Modifier.fillMaxSize().background(verlauf)) {
+    Box(Modifier.fillMaxSize().then(if (sparsam) Modifier.background(grund) else Modifier.background(verlauf))) {
         VorbildRaster(faktor = 1f) {
             Row(Modifier.fillMaxSize().systemBarsPadding()) {
                 // --- Die Uhr ---
@@ -202,11 +213,11 @@ fun DammZeitApp() {
                         if (zifferModus) ZiffernAnzeige(anzeigeRest, anzeigeDauer, scheibenFarbe, schrift, klingelnd, Modifier.weight(1f).fillMaxWidth())
                         else Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
                             // Klingelt es, pulsiert ein Leuchten hinter der Uhr und sie "atmet" leicht.
-                            val puls = if (klingelnd) {
+                            val puls = if (klingelnd && !sparsam) {
                                 val t = rememberInfiniteTransition(label = "klingeln")
                                 t.animateFloat(0f, 1f, infiniteRepeatable(tween(750), RepeatMode.Reverse), label = "puls").value
                             } else 0f
-                            if (klingelnd) {
+                            if (klingelnd && !sparsam) {
                                 Canvas(Modifier.fillMaxSize()) {
                                     val r = size.minDimension * 0.31f * (1.08f + 0.14f * puls)
                                     drawCircle(
@@ -243,7 +254,7 @@ fun DammZeitApp() {
                         }
                         AnimatedContent(
                             targetState = status,
-                            transitionSpec = { fadeIn(tween(250)) togetherWith fadeOut(tween(200)) },
+                            transitionSpec = { if (sparsam) EnterTransition.None togetherWith ExitTransition.None else fadeIn(tween(250)) togetherWith fadeOut(tween(200)) },
                             label = "status"
                         ) { text ->
                             if (text.isNotEmpty()) {
@@ -269,7 +280,7 @@ fun DammZeitApp() {
                     // --- Umschalter Timer / Stoppuhr ---
                     Row(
                         Modifier.align(Alignment.TopStart).padding(28.dp)
-                            .shadow(3.dp, androidx.compose.foundation.shape.RoundedCornerShape(50))
+                            .shadow(if (sparsam) 0.dp else 3.dp, androidx.compose.foundation.shape.RoundedCornerShape(50))
                             .clip(androidx.compose.foundation.shape.RoundedCornerShape(50)).background(Karte).padding(8.dp)
                     ) {
                         for ((name, art) in listOf("Timer" to 0, "Sanduhr" to 1, "Stoppuhr" to 2, "Lärm" to 3)) {
@@ -325,8 +336,8 @@ fun DammZeitApp() {
                 // --- Einstellungen: rechts daneben, die Uhr bleibt sichtbar ---
                 AnimatedVisibility(
                     visible = menueOffen,
-                    enter = slideInHorizontally { it },
-                    exit = slideOutHorizontally { it }
+                    enter = if (sparsam) EnterTransition.None else slideInHorizontally { it },
+                    exit = if (sparsam) ExitTransition.None else slideOutHorizontally { it }
                 ) {
                     EinstellungenPanel(
                         einstellungen = einstellungen,
@@ -362,10 +373,11 @@ fun DammZeitApp() {
 @Composable
 private fun ZuruecksetzenKnopf(sichtbar: Boolean, onClick: () -> Unit) {
     Box(Modifier.size(84.dp), contentAlignment = Alignment.Center) {
+        val sparsam = LokalSparsam.current
         AnimatedVisibility(
             visible = sichtbar,
-            enter = fadeIn(tween(250)) + scaleIn(tween(300), initialScale = 0.6f),
-            exit = fadeOut(tween(200)) + scaleOut(tween(200), targetScale = 0.6f)
+            enter = if (sparsam) EnterTransition.None else fadeIn(tween(250)) + scaleIn(tween(300), initialScale = 0.6f),
+            exit = if (sparsam) ExitTransition.None else fadeOut(tween(200)) + scaleOut(tween(200), targetScale = 0.6f)
         ) {
             RundKnopf("Zurücksetzen", onClick, groesse = 84.dp) {
                 SymbolBild(Symbol.ZURUECK, Text1, Modifier.size(40.dp))

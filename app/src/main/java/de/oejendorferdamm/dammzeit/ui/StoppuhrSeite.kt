@@ -120,7 +120,7 @@ private fun StartStoppKnopf(laeuft: Boolean, onClick: () -> Unit) {
             .drueckFeder(quelle)
             .height(128.dp)
             .widthIn(min = 340.dp)
-            .shadow(10.dp, RoundedCornerShape(64.dp), ambientColor = farbe, spotColor = farbe)
+            .shadow(if (LokalSparsam.current) 0.dp else 10.dp, RoundedCornerShape(64.dp), ambientColor = farbe, spotColor = farbe)
             .clip(RoundedCornerShape(64.dp))
             .background(Brush.verticalGradient(listOf(lerpFarbe(farbe, Color.White, 0.18f), farbe)))
             .clickable(quelle, null, onClick = onClick)
@@ -143,7 +143,7 @@ private fun RundenListe(runden: List<Long>, modifier: Modifier) {
     val dauern = runden.mapIndexed { i, t -> (t - (runden.getOrNull(i - 1) ?: 0L)) / 10 * 10 }
     val beste = if (dauern.size > 1 && dauern.min() != dauern.max()) dauern.min() else -1L
     val schlechteste = if (beste >= 0) dauern.max() else -1L
-    Column(modifier.shadow(3.dp, RoundedCornerShape(28.dp)).clip(RoundedCornerShape(28.dp)).background(Karte).padding(26.dp)) {
+    Column(modifier.shadow(if (LokalSparsam.current) 0.dp else 3.dp, RoundedCornerShape(28.dp)).clip(RoundedCornerShape(28.dp)).background(Karte).padding(26.dp)) {
         Text("Runden", color = Text1, fontSize = 30.sp, fontWeight = FontWeight.Bold)
         Spacer(Modifier.height(12.dp))
         if (runden.isEmpty()) Text("Mit der Fahne hältst du Runden fest.", color = Text2, fontSize = 24.sp)

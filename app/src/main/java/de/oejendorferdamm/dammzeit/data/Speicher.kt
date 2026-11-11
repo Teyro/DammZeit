@@ -58,7 +58,8 @@ object Speicher {
             pausenZeiten = (prefs.getString("pausen", null) ?: STANDARD_PAUSEN).split(',').map { it.trim() }.filter { ZEIT.matches(it) }.sorted(),
             laermGelb = prefs.getInt("laerm_gelb", 55),
             laermRot = prefs.getInt("laerm_rot", 70),
-            laermTon = prefs.getBoolean("laerm_ton", false)
+            laermTon = prefs.getBoolean("laerm_ton", false),
+            leistung = prefs.getString("leistung", null) ?: "auto"
         )
         _favoriten.value = ladeFavoriten(prefs.getString("favoriten", "") ?: "")
     }
@@ -133,6 +134,7 @@ object Speicher {
             .putInt("laerm_gelb", neu.laermGelb)
             .putInt("laerm_rot", neu.laermRot)
             .putBoolean("laerm_ton", neu.laermTon)
+            .putString("leistung", neu.leistung)
             .apply()
         _einstellungen.value = neu
     }
@@ -160,7 +162,9 @@ data class Einstellungen(
     /** Lärmampel: ab diesem Pegel (0–100) gelb bzw. rot; Ton bei Rot. */
     val laermGelb: Int = 55,
     val laermRot: Int = 70,
-    val laermTon: Boolean = false
+    val laermTon: Boolean = false,
+    /** auto / voll / spar – siehe ui/Leistung */
+    val leistung: String = "auto"
 )
 
 /** Gespeicherte Vorlage: Name, Zeit, Farbe und ob als Sanduhr. */

@@ -89,15 +89,18 @@ fun LaermAnsicht(schrift: Color, modifier: Modifier = Modifier) {
         onDispose { view.keepScreenOn = false }
     }
 
-    if (erlaubt) LaunchedEffect(Unit) {
+    val sparsam = LokalSparsam.current
+    if (erlaubt) LaunchedEffect(sparsam) {
         var lautSeit = 0L
+        var gezeigt = 0L
         var ruhigSeit = 0L
         var tonGespielt = 0L
         Pegelmesser.pegel().collect { p ->
             val jetzt = System.currentTimeMillis()
             // Den eigenen Warnton nicht mitmessen
             if (jetzt - tonGespielt < 1500) return@collect
-            pegel = p
+            // sparsam: die Anzeige nur viermal pro Sekunde neu, die Ampel rechnet trotzdem mit jedem Wert
+            if (!sparsam || jetzt - gezeigt >= 250) { pegel = p; gezeigt = jetzt }
             val e = Speicher.einstellungen.value
             val ziel = when {
                 p >= e.laermRot -> Stufe.ROT

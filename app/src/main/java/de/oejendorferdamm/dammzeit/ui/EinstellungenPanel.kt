@@ -69,6 +69,14 @@ import de.oejendorferdamm.dammzeit.update.oeffneUnbekannteQuellenEinstellungen
 import de.oejendorferdamm.dammzeit.update.pruefeUpdateApk
 import de.oejendorferdamm.dammzeit.widget.WidgetGross
 import de.oejendorferdamm.dammzeit.widget.WidgetKlein
+import de.oejendorferdamm.dammzeit.ui.m3.EinstellungenThema
+import de.oejendorferdamm.dammzeit.ui.m3.M3Auswahl
+import de.oejendorferdamm.dammzeit.ui.m3.M3Bereich
+import de.oejendorferdamm.dammzeit.ui.m3.M3Knopf
+import de.oejendorferdamm.dammzeit.ui.m3.M3Feld
+import de.oejendorferdamm.dammzeit.ui.m3.M3Gruppe
+import de.oejendorferdamm.dammzeit.ui.m3.M3Kopf
+import de.oejendorferdamm.dammzeit.ui.m3.M3Schalter
 import kotlinx.coroutines.launch
 import java.io.File
 
@@ -99,24 +107,15 @@ fun EinstellungenPanel(
         else -> "Einstellungen"
     }
     val sparsam = LokalSparsam.current
-    Column(modifier.shadow(if (sparsam) 0.dp else 16.dp).background(HellerGrund)) {
-        Row(Modifier.fillMaxWidth().padding(start = 28.dp, end = 28.dp, top = 28.dp, bottom = 16.dp), verticalAlignment = Alignment.CenterVertically) {
-            if (seite != null) {
-                RundKnopf("Zurück zur Übersicht", { seite = null }, groesse = 72.dp) {
-                    SymbolBild(Symbol.ZURUECK_PFEIL, Text1, Modifier.size(32.dp))
-                }
-                Spacer(Modifier.width(18.dp))
-            }
-            Text(titel, color = Text1, fontSize = 34.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-            RundKnopf("Einstellungen schließen", onSchliessen, groesse = 72.dp) {
-                SymbolBild(Symbol.SCHLIESSEN, Text1, Modifier.size(32.dp))
-            }
-        }
+    EinstellungenThema {
+    Column(modifier.shadow(if (sparsam) 0.dp else 16.dp).background(androidx.compose.material3.MaterialTheme.colorScheme.surfaceContainer)) {
+        M3Kopf(titel, if (seite != null) ({ seite = null }) else null, onSchliessen)
         androidx.compose.runtime.key(seite) {
-        Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(start = 28.dp, end = 28.dp, bottom = 28.dp)) {
+        Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(start = 20.dp, end = 20.dp, bottom = 20.dp)) {
         when (seite) {
             null -> {
                 val an = { b: Boolean -> if (b) "an" else "aus" }
+                M3Gruppe {
                 BereichZeile("🎨", Color(0xFF7C3AED), "Aussehen", "${einstellungen.farbe.bezeichnung} · Hintergrund ${einstellungen.hintergrund.bezeichnung}") { seite = "aussehen" }
                 BereichZeile("🕘", Color(0xFF0891B2), "Zifferblatt", "${einstellungen.skalaMinuten} Minuten · ${einstellungen.laufrichtung.bezeichnung}") { seite = "zifferblatt" }
                 BereichZeile("🔔", Color(0xFFD97706), "Klingelton",
@@ -125,17 +124,20 @@ fun EinstellungenPanel(
                     if (einstellungen.pausenZeiten.isEmpty()) "keine Zeiten" else einstellungen.pausenZeiten.joinToString(" · ")) { seite = "pausen" }
                 BereichZeile("👆", Color(0xFF16A34A), "Bedienung",
                     "Sofort starten ${an(einstellungen.sofortStarten)} · Bildschirm anlassen ${an(einstellungen.bildschirmAn)} · Widget") { seite = "bedienung" }
+                }
+                M3Gruppe("Allgemein") {
                 BereichZeile("⚡", Color(0xFFCA8A04), "Leistung", leistungText(einstellungen.leistung)) { seite = "leistung" }
                 BereichZeile("⬆️", Color(0xFF2563EB), "Updates",
                     if (updateInfo != null) "Neue Version ${updateInfo.version} verfügbar" else "Installiert: $version · automatisch prüfen ${an(einstellungen.autoUpdate)}",
                     hinweis = updateInfo != null) { seite = "update" }
                 BereichZeile("ℹ️", Color(0xFF6B7280), "Über DammZeit", "Version $version · freie Software") { seite = "ueber" }
+                }
             }
             "aussehen" -> {
         Karte("Farbe der Zeitscheibe") {
             FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 FarbModus.entries.forEach { modus ->
-                    Auswahl(modus.bezeichnung, einstellungen.farbe == modus, { aendere { it.copy(farbe = modus) } }, schrift = 18.sp) {
+                    M3Auswahl(modus.bezeichnung, einstellungen.farbe == modus, { aendere { it.copy(farbe = modus) } }) {
                         FarbVorschau(modus, einstellungen.eigeneFarbe)
                     }
                 }
@@ -162,7 +164,7 @@ fun EinstellungenPanel(
         Karte("Hintergrund") {
             FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Hintergrund.entries.forEach { h ->
-                    Auswahl(h.bezeichnung, einstellungen.hintergrund == h, { aendere { it.copy(hintergrund = h) } }, schrift = 18.sp) {
+                    M3Auswahl(h.bezeichnung, einstellungen.hintergrund == h, { aendere { it.copy(hintergrund = h) } }) {
                         Box(
                             Modifier.size(20.dp).clip(CircleShape)
                                 .background(Color(ZifferblattZeichner.flaechenFarbe(h)))
@@ -180,7 +182,7 @@ fun EinstellungenPanel(
             Spacer(Modifier.height(8.dp))
             FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 SKALEN.forEach { s ->
-                    Auswahl("$s Min", einstellungen.skalaMinuten == s, { aendere { it.copy(skalaMinuten = s) } }, schrift = 18.sp)
+                    M3Auswahl("$s Min", einstellungen.skalaMinuten == s, { aendere { it.copy(skalaMinuten = s) } })
                 }
             }
             Spacer(Modifier.height(14.dp))
@@ -188,12 +190,12 @@ fun EinstellungenPanel(
             Spacer(Modifier.height(8.dp))
             FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Laufrichtung.entries.forEach { r ->
-                    Auswahl(r.bezeichnung, einstellungen.laufrichtung == r, { aendere { it.copy(laufrichtung = r) } }, schrift = 18.sp)
+                    M3Auswahl(r.bezeichnung, einstellungen.laufrichtung == r, { aendere { it.copy(laufrichtung = r) } })
                 }
             }
-            Schalter("Zahlen am Rand", einstellungen.zahlenAnzeigen) { an -> aendere { it.copy(zahlenAnzeigen = an) } }
-            Schalter("Überschrift (z. B. „14 MINUTEN-TIMER“)", einstellungen.titelAnzeigen) { an -> aendere { it.copy(titelAnzeigen = an) } }
-            Schalter("Restzeit zusätzlich als Zahl", einstellungen.restzeitAnzeigen) { an -> aendere { it.copy(restzeitAnzeigen = an) } }
+            M3Schalter("Zahlen am Rand", einstellungen.zahlenAnzeigen) { an -> aendere { it.copy(zahlenAnzeigen = an) } }
+            M3Schalter("Überschrift (z. B. „14 MINUTEN-TIMER“)", einstellungen.titelAnzeigen) { an -> aendere { it.copy(titelAnzeigen = an) } }
+            M3Schalter("Restzeit zusätzlich als Zahl", einstellungen.restzeitAnzeigen) { an -> aendere { it.copy(restzeitAnzeigen = an) } }
         }
 
             }
@@ -203,7 +205,7 @@ fun EinstellungenPanel(
             Spacer(Modifier.height(10.dp))
             FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 einstellungen.pausenZeiten.forEach { z ->
-                    Auswahl("$z  ✕", false, { aendere { it.copy(pausenZeiten = it.pausenZeiten - z) } }, schrift = 18.sp)
+                    M3Auswahl("$z  ✕", false, { aendere { it.copy(pausenZeiten = it.pausenZeiten - z) } })
                 }
             }
             Spacer(Modifier.height(12.dp))
@@ -218,10 +220,10 @@ fun EinstellungenPanel(
                 Text("%02d".format(minute), color = Text1, fontSize = 30.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 10.dp))
                 RundKnopf("Fünf Minuten mehr", { minute = (minute + 5) % 60 }, groesse = 52.dp, farbe = Flaeche) { SymbolBild(Symbol.PLUS, Text1, Modifier.size(22.dp)) }
                 Spacer(Modifier.width(14.dp))
-                Auswahl("Hinzufügen", true, {
+                M3Knopf("Hinzufügen", betont = true) {
                     val z = "%02d:%02d".format(stunde, minute)
                     aendere { it.copy(pausenZeiten = (it.pausenZeiten + z).distinct().sorted()) }
-                }, schrift = 18.sp)
+                }
             }
         }
 
@@ -235,12 +237,12 @@ fun EinstellungenPanel(
                         Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(18.dp))
-                            .background(if (gewaehlt) Text1 else Flaeche)
+                            .background(if (gewaehlt) androidx.compose.material3.MaterialTheme.colorScheme.secondaryContainer else androidx.compose.material3.MaterialTheme.colorScheme.surfaceContainerLow)
                             .clickable(role = Role.RadioButton) { aendere { it.copy(ton = ton) } }
                             .padding(horizontal = 20.dp, vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(ton.bezeichnung, color = if (gewaehlt) Color.White else Text1, fontSize = 19.sp, modifier = Modifier.weight(1f))
+                        Text(ton.bezeichnung, color = if (gewaehlt) androidx.compose.material3.MaterialTheme.colorScheme.onSecondaryContainer else Text1, fontWeight = if (gewaehlt) FontWeight.Medium else FontWeight.Normal, fontSize = 19.sp, modifier = Modifier.weight(1f))
                         if (ton != Ton.STILL) {
                             RundKnopf("${ton.bezeichnung} anhören", { spieler.spiele(ton, wiederholen = false, lautstaerke = einstellungen.lautstaerke) }, groesse = 52.dp) {
                                 SymbolBild(Symbol.LAUTSPRECHER, Text1, Modifier.size(26.dp))
@@ -254,7 +256,7 @@ fun EinstellungenPanel(
             Spacer(Modifier.height(8.dp))
             FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 listOf(3 to "3 Sek", 5 to "5 Sek", 10 to "10 Sek", 30 to "30 Sek", 60 to "1 Min", 120 to "2 Min", 0 to "Bis zum Antippen").forEach { (s, text) ->
-                    Auswahl(text, einstellungen.klingelSekunden == s, { aendere { it.copy(klingelSekunden = s) } }, schrift = 18.sp)
+                    M3Auswahl(text, einstellungen.klingelSekunden == s, { aendere { it.copy(klingelSekunden = s) } })
                 }
             }
             Spacer(Modifier.height(16.dp))
@@ -268,16 +270,15 @@ fun EinstellungenPanel(
                     aendere { it.copy(lautstaerke = wert) }
                     spieler.spiele(einstellungen.ton, wiederholen = false, lautstaerke = wert)
                 },
-                valueRange = 0.1f..1f,
-                colors = SliderDefaults.colors(thumbColor = Akzent, activeTrackColor = Akzent)
+                valueRange = 0.1f..1f
             )
         }
 
             }
             "bedienung" -> {
         Karte("Bedienung") {
-            Schalter("Nach dem Einstellen sofort starten", einstellungen.sofortStarten) { an -> aendere { it.copy(sofortStarten = an) } }
-            Schalter("Bildschirm anlassen, solange die Uhr läuft", einstellungen.bildschirmAn) { an -> aendere { it.copy(bildschirmAn = an) } }
+            M3Schalter("Nach dem Einstellen sofort starten", einstellungen.sofortStarten) { an -> aendere { it.copy(sofortStarten = an) } }
+            M3Schalter("Bildschirm anlassen, solange die Uhr läuft", einstellungen.bildschirmAn) { an -> aendere { it.copy(bildschirmAn = an) } }
             Spacer(Modifier.height(10.dp))
             Text(
                 "An der Uhr ziehen stellt die Zeit ein. Kurz antippen: starten, anhalten – und " +
@@ -290,8 +291,8 @@ fun EinstellungenPanel(
             Text("Nur die runde Uhr – antippen startet oder hält sie an.", color = Text2, fontSize = 16.sp)
             Spacer(Modifier.height(10.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                GrosserKnopf("Widget 2 × 2", Flaeche, Text1, Modifier.weight(1f)) { widgetAnheften(context, gross = false) }
-                GrosserKnopf("Widget 4 × 4", Flaeche, Text1, Modifier.weight(1f)) { widgetAnheften(context, gross = true) }
+                M3Knopf("Widget 2 × 2", Modifier.weight(1f)) { widgetAnheften(context, gross = false) }
+                M3Knopf("Widget 4 × 4", Modifier.weight(1f)) { widgetAnheften(context, gross = true) }
             }
         }
 
@@ -306,6 +307,7 @@ fun EinstellungenPanel(
         }
         }
         }
+    }
     }
 }
 
@@ -323,9 +325,9 @@ private fun leistungText(wahl: String) = when (wahl) {
 private fun LeistungKarte(wahl: String, onWahl: (String) -> Unit) {
     Karte("Leistung") {
         FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Auswahl("Automatisch", wahl == Leistung.AUTO, { onWahl(Leistung.AUTO) }, schrift = 18.sp)
-            Auswahl("Voll", wahl == Leistung.VOLL, { onWahl(Leistung.VOLL) }, schrift = 18.sp)
-            Auswahl("Sparsam", wahl == Leistung.SPAR, { onWahl(Leistung.SPAR) }, schrift = 18.sp)
+            M3Auswahl("Automatisch", wahl == Leistung.AUTO, { onWahl(Leistung.AUTO) })
+            M3Auswahl("Voll", wahl == Leistung.VOLL, { onWahl(Leistung.VOLL) })
+            M3Auswahl("Sparsam", wahl == Leistung.SPAR, { onWahl(Leistung.SPAR) })
         }
         Spacer(Modifier.height(16.dp))
         Text(
@@ -341,25 +343,8 @@ private fun LeistungKarte(wahl: String, onWahl: (String) -> Unit) {
 
 /** Zeile der Übersicht: Symbol im Farbkreis, Titel, Kurzfassung, Pfeil – die ganze Zeile ist der Knopf. */
 @Composable
-private fun BereichZeile(symbol: String, farbe: Color, titel: String, text: String, hinweis: Boolean = false, onClick: () -> Unit) {
-    val quelle = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
-    Row(
-        Modifier.fillMaxWidth().padding(bottom = 14.dp).drueckFeder(quelle)
-            .shadow(if (LokalSparsam.current) 0.dp else 2.dp, RoundedCornerShape(26.dp)).clip(RoundedCornerShape(26.dp)).background(Color.White)
-            .clickable(quelle, androidx.compose.material3.ripple(), role = Role.Button, onClick = onClick)
-            .padding(horizontal = 22.dp, vertical = 18.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Box(Modifier.size(64.dp).clip(CircleShape).background(farbe.copy(alpha = 0.16f)), contentAlignment = Alignment.Center) {
-            Text(symbol, fontSize = 30.sp)
-        }
-        Column(Modifier.weight(1f).padding(horizontal = 20.dp)) {
-            Text(titel, color = Text1, fontSize = 24.sp, fontWeight = FontWeight.Bold)
-            Text(text, color = if (hinweis) Akzent else Text2, fontSize = 17.sp, maxLines = 2)
-        }
-        Text("›", color = Text2, fontSize = 40.sp)
-    }
-}
+private fun BereichZeile(symbol: String, farbe: Color, titel: String, text: String, hinweis: Boolean = false, onClick: () -> Unit) =
+    M3Bereich(symbol, farbe, titel, text, hinweis, onClick)
 
 private fun widgetAnheften(context: Context, gross: Boolean) {
     val manager = AppWidgetManager.getInstance(context)
@@ -372,15 +357,7 @@ private fun widgetAnheften(context: Context, gross: Boolean) {
 }
 
 @Composable
-private fun Karte(titel: String, inhalt: @Composable () -> Unit) {
-    Column(
-        Modifier.fillMaxWidth().padding(bottom = 18.dp).clip(RoundedCornerShape(26.dp)).background(Color.White).padding(24.dp)
-    ) {
-        Text(titel, color = Text1, fontSize = 24.sp, fontWeight = FontWeight.Bold)
-        Spacer(Modifier.height(14.dp))
-        inhalt()
-    }
-}
+private fun Karte(titel: String, inhalt: @Composable () -> Unit) = M3Gruppe(titel) { M3Feld { inhalt() } }
 
 @Composable
 fun Schalter(titel: String, an: Boolean, onAendern: (Boolean) -> Unit) {
@@ -411,22 +388,22 @@ private fun UpdateKarte(
 
     Karte("Updates") {
         Text("Installiert: $version", color = Text2, fontSize = 17.sp)
-        Schalter("Automatisch nach Updates suchen", autoUpdate) { an -> Speicher.aendereEinstellungen { it.copy(autoUpdate = an) } }
+        M3Schalter("Automatisch nach Updates suchen", autoUpdate) { an -> Speicher.aendereEinstellungen { it.copy(autoUpdate = an) } }
         Spacer(Modifier.height(14.dp))
         if (info != null) {
-            Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(Akzent).padding(20.dp)) {
-                Text("Neue Version ${info.version}", color = Color.White, fontSize = 21.sp, fontWeight = FontWeight.Bold)
+            Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(androidx.compose.material3.MaterialTheme.colorScheme.primaryContainer).padding(20.dp)) {
+                Text("Neue Version ${info.version}", color = androidx.compose.material3.MaterialTheme.colorScheme.onPrimaryContainer, fontSize = 21.sp, fontWeight = FontWeight.Bold)
                 if (info.changelog.isNotBlank()) {
                     Spacer(Modifier.height(6.dp))
-                    Text(info.changelog.trim(), color = Color.White.copy(alpha = 0.9f), fontSize = 15.sp, maxLines = 10)
+                    Text(info.changelog.trim(), color = androidx.compose.material3.MaterialTheme.colorScheme.onPrimaryContainer, fontSize = 15.sp, maxLines = 10)
                 }
                 Spacer(Modifier.height(12.dp))
-                GrosserKnopf(if (ladend) "Lädt … ${(fortschritt * 100).toInt()} %" else "Jetzt aktualisieren", Color.White, Akzent, Modifier.fillMaxWidth()) {
-                    if (ladend) return@GrosserKnopf
+                M3Knopf(if (ladend) "Lädt … ${(fortschritt * 100).toInt()} %" else "Jetzt aktualisieren", Modifier.fillMaxWidth(), betont = true) {
+                    if (ladend) return@M3Knopf
                     if (!kannUnbekannteQuellenInstallieren(context)) {
                         Toast.makeText(context, "Bitte DammZeit die Installation erlauben und dann erneut tippen", Toast.LENGTH_LONG).show()
                         oeffneUnbekannteQuellenEinstellungen(context)
-                        return@GrosserKnopf
+                        return@M3Knopf
                     }
                     ladend = true
                     fehler = null
@@ -446,17 +423,17 @@ private fun UpdateKarte(
                 }
                 fehler?.let {
                     Spacer(Modifier.height(8.dp))
-                    Text(it, color = Color.White, fontSize = 15.sp)
+                    Text(it, color = androidx.compose.material3.MaterialTheme.colorScheme.error, fontSize = 15.sp)
                 }
             }
         } else {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                GrosserKnopf(if (pruefungLaeuft) "Prüft …" else "Jetzt nach Updates suchen", Text1, Color.White, Modifier.weight(1f)) {
+                M3Knopf(if (pruefungLaeuft) "Prüft …" else "Jetzt nach Updates suchen", Modifier.weight(1f)) {
                     if (!pruefungLaeuft) onJetztPruefen()
                 }
                 if (pruefungLaeuft) {
                     Spacer(Modifier.size(12.dp))
-                    CircularProgressIndicator(color = Akzent, modifier = Modifier.size(32.dp))
+                    CircularProgressIndicator(modifier = Modifier.size(32.dp))
                 }
             }
             if (bereitsAktuell && !pruefungLaeuft) {
@@ -466,7 +443,7 @@ private fun UpdateKarte(
         }
         Spacer(Modifier.height(12.dp))
         val context = LocalContext.current
-        GrosserKnopf("Damm-Apps in F-Droid hinzufügen", Text1, Color.White, Modifier.fillMaxWidth()) { oeffneFDroidRepo(context) }
+        M3Knopf("Damm-Apps in F-Droid hinzufügen", Modifier.fillMaxWidth()) { oeffneFDroidRepo(context) }
     }
 }
 

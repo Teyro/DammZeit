@@ -177,7 +177,7 @@ fun EinstellungenPanel(
 
             }
             "zifferblatt" -> {
-        Karte("Zifferblatt") {
+        Karte(null) {
             Text("Minuten für eine volle Runde", color = Text2, fontSize = 17.sp)
             Spacer(Modifier.height(8.dp))
             FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -229,7 +229,7 @@ fun EinstellungenPanel(
 
             }
             "klingel" -> {
-        Karte("Klingelton") {
+        Karte(null) {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Ton.entries.forEach { ton ->
                     val gewaehlt = einstellungen.ton == ton
@@ -276,7 +276,7 @@ fun EinstellungenPanel(
 
             }
             "bedienung" -> {
-        Karte("Bedienung") {
+        Karte(null) {
             M3Schalter("Nach dem Einstellen sofort starten", einstellungen.sofortStarten) { an -> aendere { it.copy(sofortStarten = an) } }
             M3Schalter("Bildschirm anlassen, solange die Uhr läuft", einstellungen.bildschirmAn) { an -> aendere { it.copy(bildschirmAn = an) } }
             Spacer(Modifier.height(10.dp))
@@ -323,7 +323,7 @@ private fun leistungText(wahl: String) = when (wahl) {
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun LeistungKarte(wahl: String, onWahl: (String) -> Unit) {
-    Karte("Leistung") {
+    Karte(null) {
         FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             M3Auswahl("Automatisch", wahl == Leistung.AUTO, { onWahl(Leistung.AUTO) })
             M3Auswahl("Voll", wahl == Leistung.VOLL, { onWahl(Leistung.VOLL) })
@@ -357,7 +357,7 @@ private fun widgetAnheften(context: Context, gross: Boolean) {
 }
 
 @Composable
-private fun Karte(titel: String, inhalt: @Composable () -> Unit) = M3Gruppe(titel) { M3Feld { inhalt() } }
+private fun Karte(titel: String?, inhalt: @Composable () -> Unit) = M3Gruppe(titel) { M3Feld { inhalt() } }
 
 @Composable
 fun Schalter(titel: String, an: Boolean, onAendern: (Boolean) -> Unit) {
@@ -386,7 +386,7 @@ private fun UpdateKarte(
     var fortschritt by remember { mutableFloatStateOf(0f) }
     var fehler by remember { mutableStateOf<String?>(null) }
 
-    Karte("Updates") {
+    Karte(null) {
         Text("Installiert: $version", color = Text2, fontSize = 17.sp)
         M3Schalter("Automatisch nach Updates suchen", autoUpdate) { an -> Speicher.aendereEinstellungen { it.copy(autoUpdate = an) } }
         Spacer(Modifier.height(14.dp))

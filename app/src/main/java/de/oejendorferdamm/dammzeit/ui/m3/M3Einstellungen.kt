@@ -69,9 +69,13 @@ private val FestePalette = lightColorScheme(
 fun einstellungenFarben(): ColorScheme =
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) dynamicLightColorScheme(LocalContext.current) else FestePalette
 
+/** true innerhalb der Einstellungen – app-eigene Bausteine (Karte, Schalter, Knopf) zeichnen sich dann im Material-Stil */
+val LokalEinstellungen = androidx.compose.runtime.staticCompositionLocalOf { false }
+
 /** Rahmen für alles, was in den Einstellungen steht: Material-You-Farben (Schalter, Regler, Knöpfe nehmen sie automatisch) */
 @Composable
-fun EinstellungenThema(inhalt: @Composable () -> Unit) = MaterialTheme(colorScheme = einstellungenFarben(), content = inhalt)
+fun EinstellungenThema(inhalt: @Composable () -> Unit) =
+    androidx.compose.runtime.CompositionLocalProvider(LokalEinstellungen provides true) { MaterialTheme(colorScheme = einstellungenFarben(), content = inhalt) }
 
 /** Kopfzeile: ← zurück (nur auf Unterseiten), Titel, ✕ schließen – in allen Apps gleich */
 @Composable

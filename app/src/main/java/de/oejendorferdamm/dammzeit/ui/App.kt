@@ -177,10 +177,16 @@ private fun DammZeitInhalt() {
         }
         pruefungLaeuft = false
     }
+    // Automatisch nur in ruhigen Zeiten (Pausen, vor/nach dem Unterricht) – höchstens alle 6 Stunden
     LaunchedEffect(einstellungen.autoUpdate) {
-        if (einstellungen.autoUpdate) {
-            delay(8_000)
-            pruefe()
+        if (!einstellungen.autoUpdate) return@LaunchedEffect
+        delay(8_000)
+        var zuletzt = 0L
+        while (true) {
+            if (de.oejendorferdamm.dammzeit.update.UpdateZeit.erlaubt() && System.currentTimeMillis() - zuletzt > 6 * 60 * 60_000L) {
+                pruefe(); zuletzt = System.currentTimeMillis()
+            }
+            delay(60_000)
         }
     }
 

@@ -69,14 +69,14 @@ import de.oejendorferdamm.dammzeit.update.oeffneUnbekannteQuellenEinstellungen
 import de.oejendorferdamm.dammzeit.update.pruefeUpdateApk
 import de.oejendorferdamm.dammzeit.widget.WidgetGross
 import de.oejendorferdamm.dammzeit.widget.WidgetKlein
-import de.oejendorferdamm.dammzeit.ui.m3.EinstellungenThema
-import de.oejendorferdamm.dammzeit.ui.m3.M3Auswahl
-import de.oejendorferdamm.dammzeit.ui.m3.M3Bereich
-import de.oejendorferdamm.dammzeit.ui.m3.M3Knopf
-import de.oejendorferdamm.dammzeit.ui.m3.M3Feld
-import de.oejendorferdamm.dammzeit.ui.m3.M3Gruppe
-import de.oejendorferdamm.dammzeit.ui.m3.M3Kopf
-import de.oejendorferdamm.dammzeit.ui.m3.M3Schalter
+import de.oejendorferdamm.core.m3.EinstellungenThema
+import de.oejendorferdamm.core.m3.M3Auswahl
+import de.oejendorferdamm.core.m3.M3Bereich
+import de.oejendorferdamm.core.m3.M3Knopf
+import de.oejendorferdamm.core.m3.M3Feld
+import de.oejendorferdamm.core.m3.M3Gruppe
+import de.oejendorferdamm.core.m3.M3Kopf
+import de.oejendorferdamm.core.m3.M3Schalter
 import kotlinx.coroutines.launch
 import java.io.File
 
